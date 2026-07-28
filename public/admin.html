@@ -1,0 +1,2634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Automation Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@700&family=Anek+Malayalam:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #25D366;
+            --bg-color: #0b141a;
+            --panel-bg: #111b21;
+            --text-light: #e9edef;
+            --text-muted: #8696a0;
+            --border: #222d34;
+        }
+
+        body {
+            font-family: 'Anek Malayalam', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            background-color: #202c33;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-top-left-radius: 11px;
+            border-top-right-radius: 11px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a3942;
+            border: 1px solid #2a3942;
+            border-radius: 8px;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: #111b21;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #22c35e;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background-color: rgba(37, 211, 102, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            display: block;
+        }
+
+        .status.error {
+            background-color: rgba(242, 60, 60, 0.1);
+            color: #f23c3c;
+            border: 1px solid #f23c3c;
+            display: block;
+        }
+        
+        .whatsapp-icon {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .paste-zone {
+            border: 2px dashed #457B9D;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(69, 123, 157, 0.1);
+            color: var(--text-light);
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .paste-zone:hover, .paste-zone:focus {
+            border-color: var(--primary);
+            background-color: rgba(37, 211, 102, 0.1);
+            outline: none;
+        }
+        .paste-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .paste-or {
+            margin: 10px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .paste-input {
+            margin-left: 60px;
+        }
+
+        .helper-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .group-select-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        .group-select-input {
+            flex: 1;
+        }
+        .rename-group-btn {
+            margin-top: 0 !important;
+            padding: 0 15px;
+            width: auto;
+            height: 46px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .hr-divider {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 30px 0;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-light);
+        }
+        .section-title-large {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-light);
+        }
+        .section-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+        }
+        .checkbox-label {
+            margin: 0;
+        }
+        .checkbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: fit-content;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            color: var(--text-light);
+            width: fit-content;
+        }
+        .btn-blue {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-red {
+            background-color: #e63946;
+            color: white;
+            margin-top: 10px;
+        }
+        .poster-layout, .editor-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .poster-controls, .editor-controls {
+            flex: 1;
+            min-width: 300px;
+        }
+        .poster-input {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a3942;
+            border: 1px solid #2a3942;
+            border-radius: 8px;
+            color: var(--text-light);
+            box-sizing: border-box;
+        }
+        .poster-file-input {
+            color: var(--text-light);
+            width: 100%;
+        }
+        .control-card {
+            background-color: #1a262d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #2a3942;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        .control-card:hover {
+            border-color: #457B9D;
+        }
+        .control-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #A8DADC;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a3942;
+        }
+        .color-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .color-input-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #2a3942;
+            padding: 8px 12px;
+            border-radius: 8px;
+            flex: 1;
+            cursor: pointer;
+        }
+        .color-input-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        .color-input-group input[type="color"] {
+            border: none;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-light);
+            border: 1px solid #457B9D;
+            margin-top: 10px;
+        }
+        .btn-outline:hover {
+            background-color: rgba(69, 123, 157, 0.1);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        .action-buttons button {
+            flex: 1;
+        }
+        .slider-container {
+            margin-bottom: 10px;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .slider-input {
+            width: 100%;
+        }
+        .preview-panel {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: #0b141a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            min-height: 400px;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+            z-index: 50;
+        }
+        
+        .preview-wrapper {
+            width: 324px;
+            height: 576px;
+            position: relative;
+        }
+        .poster-canvas {
+            width: 1080px;
+            height: 1080px;
+            background-color: #111;
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: 'Anek Malayalam', sans-serif;
+            overflow: hidden;
+            transform: scale(0.3);
+            transform-origin: top left;
+        }
+        .preview-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background-size: cover;
+            background-position: center;
+            background-image: url('https://via.placeholder.com/1080x700?text=Upload+Image');
+        }
+        .preview-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(17,17,17,0) 0%, rgba(17,17,17,0.4) 50%, rgba(17,17,17,1) 100%);
+        }
+        .live-badge {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 25px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+        .live-dot {
+            width: 14px;
+            height: 14px;
+            background-color: #E63946;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #E63946;
+        }
+        .live-text {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .poster-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 55%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 60px 80px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        .category-badge {
+            background-color: #E63946;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 8px 20px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            align-self: flex-start;
+        }
+        .preview-title {
+            color: #ffffff;
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin: 0 0 30px 0;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .poster-footer {
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-brand {
+            color: #457B9D;
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .preview-brand span {
+            color: #f1faee;
+        }
+        .preview-date {
+            color: #A8DADC;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .chat-viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-viewer-box {
+            background: #e5ddd5;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .chat-placeholder {
+            color: #555;
+            text-align: center;
+            margin-top: auto;
+            margin-bottom: auto;
+            font-style: italic;
+        }
+        .chat-message {
+            max-width: 75%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #303030;
+            word-wrap: break-word;
+        }
+        .msg-incoming {
+            background-color: #ffffff;
+            align-self: flex-start;
+            border-top-left-radius: 0;
+        }
+        .msg-outgoing {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+        .msg-author {
+            font-size: 12px;
+            font-weight: bold;
+            color: #075e54;
+            margin-bottom: 2px;
+        }
+        .msg-time {
+            font-size: 10px;
+            color: #999;
+            text-align: right;
+            margin-top: 4px;
+            float: right;
+            margin-left: 10px;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #111;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        .sidebar-header {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            flex: 1;
+        }
+        
+        .nav-item {
+            padding: 15px 25px;
+            color: #A8DADC;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-item.active {
+            background: rgba(230, 57, 70, 0.1);
+            color: #E63946;
+            border-left: 4px solid #E63946;
+        }
+        
+        .main-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #121212;
+            padding: 40px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        .move-mode-form { display: flex; align-items: center; gap: 10px; margin-bottom: 0; }
+        .move-mode-checkbox { width: 20px; height: 20px; cursor: pointer; }
+        .move-mode-label { cursor: pointer; font-size: 15px; color: #fff; }
+        .move-mode-hint { font-size: 12px; color: #aaa; margin-top: 5px; }
+
+        /* D-Pad Controller Styles */
+        .d-pad-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin: 15px 0;
+        }
+        .d-pad-row {
+            display: flex;
+            gap: 6px;
+        }
+        .d-pad-btn {
+            width: 44px;
+            height: 44px;
+            background: #2b2b36;
+            color: #fff;
+            border: 1px solid #3f3f50;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .d-pad-btn:hover {
+            background: #E63946;
+            border-color: #E63946;
+            transform: scale(1.05);
+        }
+        .d-pad-btn:active {
+            transform: scale(0.95);
+        }
+        .d-pad-reset {
+            font-size: 14px;
+            background: #333;
+        }
+        .step-size-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .step-size-group label {
+            font-size: 13px;
+            color: #a0a0b0;
+            margin-bottom: 0;
+        }
+        .step-btn {
+            padding: 4px 10px;
+            background: #1e1e24;
+            border: 1px solid #3f3f50;
+            color: #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .step-btn.active {
+            background: #E63946;
+            color: #fff;
+            border-color: #E63946;
+        }
+
+        #dailyPosterCanvas {
+            background-color: #222;
+        }
+        .draggable {
+            cursor: move;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .draggable .editable-text {
+            cursor: text;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        #dailyPosterCanvas .eng-day-year {
+            position: absolute; top: 930px; left: 140px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-style: italic; font-family: 'Anek Malayalam', sans-serif;
+        }
+        #dailyPosterCanvas .eng-month {
+            position: absolute; top: 1025px; left: 170px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+        }
+        #dailyPosterCanvas .eng-date {
+            position: absolute; top: 1125px; left: 170px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+        }
+        #dailyPosterCanvas .mal-day-year {
+            position: absolute; top: 930px; left: 580px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-family: 'Anek Malayalam', sans-serif;
+        }
+        #dailyPosterCanvas .mal-month {
+            position: absolute; top: 1025px; left: 610px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+        }
+        #dailyPosterCanvas .mal-date {
+            position: absolute; top: 1125px; left: 610px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+        }
+        #dailyPosterCanvas .hijri-year {
+            position: absolute; top: 1390px; left: 350px; text-align: center; width: 320px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000;
+        }
+        #dailyPosterCanvas .hijri-month {
+            position: absolute; top: 1475px; left: 380px; text-align: center; width: 260px; font-size: 30px; font-weight: 800; color: #fff; font-family: 'Anek Malayalam', sans-serif;
+        }
+        #dailyPosterCanvas .hijri-date {
+            position: absolute; top: 1565px; left: 380px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+        }
+
+        /* Restored Missing CSS */
+        .hr-divider-large { border: 0; border-top: 1px solid var(--border); margin: 40px 0; }
+        .pro-tip { margin-top: 8px; font-size: 13px; color: #E63946; font-style: italic; }
+        .slider-container.sm-margin { margin-bottom: 5px; }
+        .daily-action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .daily-action-row button {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        /* Responsive Layout & Dynamic Scale Media Queries */
+        @media (max-width: 1024px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 20px;
+                box-sizing: border-box;
+            }
+            .sidebar-header {
+                padding: 5px;
+                text-align: left;
+                border-bottom: none;
+            }
+            .sidebar-header h1 {
+                font-size: 16px;
+                margin: 0;
+            }
+            .sidebar-nav {
+                flex-direction: row;
+                padding: 0;
+                overflow-x: auto;
+            }
+            .nav-item {
+                padding: 10px 15px;
+                font-size: 14px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                white-space: nowrap;
+            }
+            .nav-item.active {
+                border-left: none;
+                border-bottom: 3px solid #E63946;
+            }
+            .main-container {
+                padding: 20px 15px;
+            }
+            .container {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .sidebar-nav {
+                width: 100%;
+            }
+            .poster-layout, .editor-layout {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .preview-panel {
+                order: -1;
+                width: 100%;
+                min-width: 100%;
+                position: relative;
+                top: 0;
+                padding: 15px;
+                box-sizing: border-box;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            }
+            .poster-controls, .editor-controls {
+                width: 100%;
+                min-width: 100%;
+            }
+            .pos-coord-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .padded-form {
+                padding: 15px;
+            }
+        }
+        #changeBrandBtn { margin-left: 5px; }
+        .chat-viewer-select { flex: 1; }
+        .refresh-chat-btn { min-width: 100px; }
+        .msg-media { color: #007bff; font-style: italic; font-size: 12px; display: block; margin-bottom: 4px; }
+        .poster-subheading-input { height: 60px; }
+        .date-toggle-group { margin-top: 10px; }
+        .preview-subheading { display: none; font-size: 24px; font-weight: 500; margin-bottom: 20px; line-height: 1.4; color: #f1faee; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); }
+        .sidebar-header .whatsapp-icon { font-size: 48px; margin-bottom: 0; }
+        .sidebar-header h1 { font-size: 20px; margin: 15px 0 0 0; color: #E63946; letter-spacing: 1px; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .tab-pane { display: none; animation: fadeIn 0.4s ease; }
+        .tab-pane .section-title, .tab-pane .section-title-large { margin-top: 0; }
+        .constrained-form { max-width: 700px; }
+        .padded-form { padding: 30px; }
+        
+        .editable-text {
+            cursor: text;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .editable-text:hover {
+            outline: 2px dashed rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .editable-text:focus {
+            outline: 2px solid #25D366;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .mt-15 { margin-top: 15px; }
+        
+        .daily-poster-canvas {
+            background-image: url('daily_template.jpg'); background-size: cover; background-position: center;
+            height: 1920px;
+        }
+        
+        .pos-coord-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .pos-coord-col { flex: 1; }
+        .pos-coord-label { font-size: 12px; color: #aaa; display: block; margin-bottom: 4px; }
+        .pos-coord-input { padding: 6px 10px; font-size: 14px; }
+        .daily-action-row { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-save-layout { flex: 1; border-color: #25D366; color: #25D366; margin-top: 0; }
+        .btn-send-daily { flex: 2; margin-top: 0; }
+        .color-picker-wrapper { display: flex; align-items: center; gap: 8px; background: #2a3942; padding: 4px 8px; border-radius: 8px; height: 46px; box-sizing: border-box; }
+        .color-picker-input { border: none; width: 32px; height: 32px; padding: 0; background: none; cursor: pointer; border-radius: 4px; }
+        .toggle-btn-group { display: flex; gap: 10px; margin-top: 12px; margin-bottom: 12px; }
+        .toggle-btn-group button { flex: 1; height: 38px; font-size: 13px; font-weight: 600; background: #2a3942; border: 1px solid #3f3f50; color: #e9edef; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .toggle-btn-group button.active { background: #E63946; border-color: #E63946; color: #ffffff; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="whatsapp-icon">💬</div>
+        <h1>News Dispatcher</h1>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-target="tab-dispatcher">🚀 Dispatcher</a>
+        <a href="#" class="nav-item" data-target="tab-poster">🎨 Poster Studio</a>
+        <a href="#" class="nav-item" data-target="tab-daily">📅 Daily Poster</a>
+        <a href="#" class="nav-item" data-target="tab-settings">⚙️ Settings</a>
+    </nav>
+</div>
+
+<div class="main-container">
+    <div class="container">
+        
+        <div id="tab-dispatcher" class="tab-pane active">
+            <div class="constrained-form padded-form">
+                <h2 class="section-title">🚀 Broadcast Dispatcher</h2>
+                <div class="form-group">
+                <label for="groupSelect">Select Target Group</label>
+            <div class="group-select-wrapper">
+                <select id="groupSelect" class="group-select-input">
+                    <option value="all">Broadcast to All Registered Groups</option>
+                </select>
+                <button id="renameGroupBtn" class="btn-outline rename-group-btn" title="Rename Selected Group">✏️ Edit</button>
+                <button id="changeBrandBtn" class="btn-outline rename-group-btn" title="Change Group Brand">🏷️ Brand</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="newsMessage">Breaking News Message</label>
+            <textarea id="newsMessage" placeholder="Write your breaking news update here..."></textarea>
+        </div>
+            <button id="sendBtn">Send Alert via WhatsApp</button>
+            </div>
+        </div>
+        
+        <div id="tab-settings" class="tab-pane">
+            <div class="constrained-form padded-form">
+                <h2 class="section-title">⚙️ Bot Configuration</h2>
+                
+                <div class="form-group">
+                    <label for="checkInterval">Check for News Every (Minutes)</label>
+                    <select id="checkInterval">
+                        <option value="15">15 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                        <option value="60">60 Minutes</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="sendImages" class="checkbox-input" checked>
+                    <label for="sendImages" class="checkbox-label">Send Images with News Alerts</label>
+                </div>
+        
+                <button id="saveSettingsBtn" class="btn-blue">Save Settings</button>
+            
+                <div id="statusMsg" class="status"></div>
+            </div>
+        </div>
+        
+        <div id="tab-poster" class="tab-pane">
+            <div class="padded-form">
+            <h2 class="section-title-large">🎨 Manual Poster Maker Studio</h2>
+            <div class="poster-layout">
+            <div class="poster-controls">
+                <div class="control-card">
+                    <div class="control-card-title">🖼️ Background Image</div>
+                    <div class="form-group">
+                        <div class="paste-zone" id="pasteZone" tabindex="0" title="Click and press Ctrl+V to paste image">
+                            <div class="paste-icon">📋</div>
+                            <div>Click here & press <strong>Ctrl+V</strong> to paste image</div>
+                            <div class="paste-or">— OR —</div>
+                            <input type="file" id="posterImageInput" accept="image/*" class="poster-file-input paste-input" title="Upload Background Image">
+                        </div>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-header"><span>Zoom Level</span><span id="zoomVal">Cover</span></div>
+                        <input type="range" id="bgZoom" min="50" max="200" value="100" class="slider-input">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-header"><span>Horizontal Position (X)</span><span id="posXVal">Center</span></div>
+                        <input type="range" id="bgPosX" min="0" max="100" value="50" class="slider-input">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-header"><span>Vertical Position (Y)</span><span id="posYVal">Center</span></div>
+                        <input type="range" id="bgPosY" min="0" max="100" value="50" class="slider-input">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-header"><span>Gradient Overlay</span><span id="overlayVal">40%</span></div>
+                        <input type="range" id="bgOverlay" min="0" max="100" value="40" class="slider-input">
+                    </div>
+                </div>
+
+                <div class="control-card">
+                    <div class="control-card-title">📝 Content Settings</div>
+                    <div class="form-group">
+                        <label for="posterTitle">Headline</label>
+                        <textarea id="posterTitle" placeholder="Enter headline..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="posterSubheading">Subheading / Brief</label>
+                        <textarea id="posterSubheading" class="poster-subheading-input" placeholder="Enter optional subheading..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="posterCategory">Category Tag</label>
+                        <input type="text" id="posterCategory" value="BREAKING NEWS" class="poster-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="posterBrand">Brand Display</label>
+                        <select id="posterBrand" class="poster-input">
+                            <option value="MATTANNUR VISION">MATTANNUR VISION</option>
+                            <option value="PARAPPANAGADI TIMES">PARAPPANAGADI TIMES</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group date-toggle-group">
+                        <input type="checkbox" id="showPosterDate" class="checkbox-input" checked>
+                        <label for="showPosterDate" class="checkbox-label">Display Date in Footer</label>
+                    </div>
+                </div>
+                
+                <div class="control-card">
+                    <div class="control-card-title">🎨 Text Appearance</div>
+                    <div class="slider-container">
+                        <div class="slider-header"><span>Title Text Size</span><span id="textSizeVal">56px</span></div>
+                        <input type="range" id="titleSize" min="30" max="90" value="56" class="slider-input">
+                    </div>
+                    <div class="color-row">
+                        <div class="color-input-group">
+                            <label for="titleColor">Text Color</label>
+                            <input type="color" id="titleColor" value="#ffffff">
+                        </div>
+                        <div class="color-input-group">
+                            <label for="badgeColor">Badge Color</label>
+                            <input type="color" id="badgeColor" value="#E63946">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="resetPosterBtn" class="btn-outline">🔄 Reset</button>
+                    <button id="downloadPosterBtn" class="btn-red">⬇️ Download Poster</button>
+                </div>
+            </div>
+
+            <div class="preview-panel">
+                <div class="preview-wrapper">
+                    <div id="posterCanvas" class="poster-canvas">
+                        <div id="previewBg" class="preview-bg">
+                            <div class="preview-gradient"></div>
+                        </div>
+                        
+                        <div class="live-badge">
+                            <div class="live-dot"></div>
+                            <div class="live-text">LIVE</div>
+                        </div>
+                        
+                        <div class="poster-content">
+                            <div id="previewCategory" class="category-badge editable-text" contenteditable="true" title="Click to edit category in preview">BREAKING NEWS</div>
+                            <div id="previewTitle" class="preview-title editable-text" contenteditable="true" title="Click to edit headline in preview">Enter headline...</div>
+                            <div id="previewSubheading" class="preview-subheading editable-text" contenteditable="true" title="Click to edit subheading in preview"></div>
+                            <div class="poster-footer">
+                                <div id="previewBrand" class="preview-brand">MATTANNUR <span>VISION</span></div>
+                                <div id="previewDate" class="preview-date">(2026...)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            </div>
+        </div>
+        
+        <div id="tab-daily" class="tab-pane">
+            <div class="padded-form">
+            <h2 class="section-title-large">📅 Daily Calendar Poster</h2>
+            <div class="editor-layout">
+                <!-- Left: Controls -->
+                <div class="editor-controls">
+                <div class="form-group">
+                    <label for="dailyGroupSelect">Select Target Group</label>
+                    <select id="dailyGroupSelect" class="group-select-input">
+                        <option value="all">Broadcast to All Registered Groups</option>
+                    </select>
+                </div>
+                <div class="control-card">
+                    <div class="control-card-title">Upload Background Template</div>
+                    <div class="form-group">
+                        <div class="paste-zone" id="dailyPasteZone" tabindex="0" title="Click and press Ctrl+V to paste">
+                            <div class="paste-icon">📋</div>
+                            <div>Click here and press <strong>Ctrl+V</strong> to paste the template</div>
+                            <div class="paste-or">— OR —</div>
+                            <input type="file" id="dailyTemplateUpload" accept="image/*" class="poster-file-input paste-input" title="Upload Background Template">
+                        </div>
+                    </div>
+                </div>
+                <div class="control-card mt-15">
+                    <div class="control-card-title">🎨 Character & Position Panel</div>
+                    <div class="form-group">
+                        <label for="moveTargetSelect">Select Text Element</label>
+                        <select id="moveTargetSelect" class="group-select-input">
+                            <option value=".eng-day-year">English Day / Year</option>
+                            <option value="#previewEngMonth">English Month (JULY)</option>
+                            <option value="#previewEngDate">English Date (23)</option>
+                            <option value=".mal-day-year">Malayalam Day / Year</option>
+                            <option value="#previewMalMonth">Malayalam Month (കർക്കിടകം)</option>
+                            <option value="#previewMalDate">Malayalam Date (07)</option>
+                            <option value="#previewHijriYear">Hijri Year (1448)</option>
+                            <option value="#previewHijriMonth">Hijri Month (Safar)</option>
+                            <option value="#previewHijriDate">Hijri Date (08)</option>
+                        </select>
+                    </div>
+
+                    <!-- Font Family & Weight -->
+                    <div class="pos-coord-row">
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">Font Family:</label>
+                            <select id="fontFamilySelect" class="group-select-input pos-coord-input">
+                                <option value="'Anek Malayalam', sans-serif">Anek Malayalam</option>
+                                <option value="'Inter', sans-serif">Inter</option>
+                                <option value="'Oswald', sans-serif">Oswald</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Outfit', sans-serif">Outfit</option>
+                                <option value="Arial, sans-serif">Arial</option>
+                                <option value="Georgia, serif">Georgia</option>
+                            </select>
+                        </div>
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">Font Weight:</label>
+                            <select id="fontWeightSelect" class="group-select-input pos-coord-input">
+                                <option value="400">Normal (400)</option>
+                                <option value="500">Medium (500)</option>
+                                <option value="600">Semi-Bold (600)</option>
+                                <option value="700">Bold (700)</option>
+                                <option value="800">Extra Bold (800)</option>
+                                <option value="900">Black (900)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Direct X & Y Inputs -->
+                    <div class="pos-coord-row">
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">X (Left px):</label>
+                            <input type="number" id="posXInput" class="group-select-input pos-coord-input" value="190">
+                        </div>
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">Y (Top px):</label>
+                            <input type="number" id="posYInput" class="group-select-input pos-coord-input" value="1025">
+                        </div>
+                    </div>
+
+                    <!-- Size & Line Height -->
+                    <div class="pos-coord-row">
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">T Size (px):</label>
+                            <input type="number" id="fontSizeInput" class="group-select-input pos-coord-input" min="10" max="300" value="45">
+                        </div>
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">↕ Leading / Line Ht:</label>
+                            <input type="number" step="0.1" id="lineHeightInput" class="group-select-input pos-coord-input" min="0.5" max="3.0" value="1.2">
+                        </div>
+                    </div>
+
+                    <!-- Letter Spacing & Color -->
+                    <div class="pos-coord-row">
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">↔ Tracking / Spacing:</label>
+                            <input type="number" id="letterSpacingInput" class="group-select-input pos-coord-input" min="-10" max="50" value="0">
+                        </div>
+                        <div class="pos-coord-col">
+                            <label class="pos-coord-label">Color:</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="textColorInput" value="#000000" class="color-picker-input">
+                                <span id="textColorHex" style="font-size: 12px; color: #ccc;">#000000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Style Toggles: Italic & Caps -->
+                    <div class="toggle-btn-group">
+                        <button type="button" id="italicToggleBtn"><i>I</i> Italic</button>
+                        <button type="button" id="uppercaseToggleBtn">TT Uppercase</button>
+                    </div>
+                    
+                    <div class="d-pad-container">
+                        <div class="d-pad-row">
+                            <button type="button" id="moveUpBtn" class="d-pad-btn" title="Move Up">▲</button>
+                        </div>
+                        <div class="d-pad-row">
+                            <button type="button" id="moveLeftBtn" class="d-pad-btn" title="Move Left">◄</button>
+                            <button type="button" id="moveResetBtn" class="d-pad-btn d-pad-reset" title="Reset All Styles & Positions">🔄</button>
+                            <button type="button" id="moveRightBtn" class="d-pad-btn" title="Move Right">►</button>
+                        </div>
+                        <div class="d-pad-row">
+                            <button type="button" id="moveDownBtn" class="d-pad-btn" title="Move Down">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="step-size-group">
+                        <label>Nudge Step:</label>
+                        <button type="button" class="step-btn active" data-step="20">20px</button>
+                        <button type="button" class="step-btn" data-step="50">50px</button>
+                        <button type="button" class="step-btn" data-step="5">5px</button>
+                    </div>
+                </div>
+
+                <div class="daily-action-row">
+                    <button id="saveDailyLayoutBtn" class="btn-outline btn-save-layout">💾 Save Layout</button>
+                    <button id="previewDailyBtn" class="btn-blue" style="background: #457B9D;">👁️ Preview Poster</button>
+                    <button id="sendDailyBtn" class="btn-blue btn-send-daily">Generate & Send Daily Poster</button>
+                </div>
+                </div>
+            
+            <!-- Right: Live Preview -->
+            <div class="preview-panel">
+                <div class="preview-wrapper">
+                    <div id="dailyPosterCanvas" class="poster-canvas daily-poster-canvas">
+                        <!-- English Block -->
+                        <div class="eng-day-year draggable">
+                            <div id="previewEngDay" class="editable-text" contenteditable="true">Thursday</div>
+                            <div id="previewEngYear" class="editable-text" contenteditable="true">2026</div>
+                        </div>
+                        <div class="eng-month editable-text draggable" id="previewEngMonth" contenteditable="true">JULY</div>
+                        <div class="eng-date editable-text draggable" id="previewEngDate" contenteditable="true">23</div>
+                        
+                        <!-- Malayalam Block -->
+                        <div class="mal-day-year draggable">
+                            <div id="previewMalDay" class="editable-text" contenteditable="true">വ്യാഴം</div>
+                            <div id="previewMalYear" class="editable-text" contenteditable="true">1201</div>
+                        </div>
+                        <div class="mal-month editable-text draggable" id="previewMalMonth" contenteditable="true">കർക്കിടകം</div>
+                        <div class="mal-date editable-text draggable" id="previewMalDate" contenteditable="true">07</div>
+                        
+                        <!-- Hijri Block -->
+                        <div class="hijri-year editable-text draggable" id="previewHijriYear" contenteditable="true">1448</div>
+                        <div class="hijri-month editable-text draggable" id="previewHijriMonth" contenteditable="true">Safar</div>
+                        <div class="hijri-date editable-text draggable" id="previewHijriDate" contenteditable="true">08</div>
+                    </div>
+                </div>
+            </div>
+            </div> <!-- Close editor-layout -->
+            </div> <!-- Close padded-form -->
+        </div> <!-- Close tab-daily -->
+
+    </div> <!-- Close container -->
+</div> <!-- Close main-container -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Tab Switching Logic
+        const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', e => {
+                e.preventDefault();
+                // Remove active from all navs and panes
+                navItems.forEach(nav => nav.classList.remove('active'));
+                tabPanes.forEach(tab => tab.classList.remove('active'));
+                
+                // Add active to clicked nav and target pane
+                item.classList.add('active');
+                const targetId = item.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+                if (typeof updateCanvasScale === 'function') setTimeout(updateCanvasScale, 50);
+            });
+        });
+
+        const groupSelect = document.getElementById('groupSelect');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        // Fetch available groups
+        try {
+            const response = await fetch('/api/groups');
+            const groups = await response.json();
+            
+            groupSelect.innerHTML = '<option value="all">Broadcast to All Registered Groups</option>';
+            
+            if (groups && groups.length > 0) {
+                groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.id;
+                    option.dataset.rawName = group.name;
+                    option.dataset.brand = group.brand || 'mattannur';
+                    option.textContent = option.dataset.brand === 'parappanagadi' ? `${group.name} [Parappanagadi Times]` : `${group.name} [Mattannur Vision]`;
+                    groupSelect.appendChild(option);
+                    if (document.getElementById('dailyGroupSelect')) {
+                        document.getElementById('dailyGroupSelect').appendChild(option.cloneNode(true));
+                    }
+                });
+            } else if (groups.error) {
+                 groupSelect.innerHTML = `<option value="">${groups.error}</option>`;
+                 if (groupSelect) groupSelect.innerHTML = `<option value="">${groups.error}</option>`;
+                 if (document.getElementById('dailyGroupSelect')) {
+                     document.getElementById('dailyGroupSelect').innerHTML = `<option value="">${groups.error}</option>`;
+                 }
+            }
+        } catch (error) {
+            console.error('Error fetching groups:', error);
+            if (groupSelect) groupSelect.innerHTML = '<option value="">Failed to load groups. Is WhatsApp connected?</option>';
+        }
+
+        const renameGroupBtn = document.getElementById('renameGroupBtn');
+        renameGroupBtn?.addEventListener('click', async () => {
+            const groupId = groupSelect?.value;
+            if (groupId === 'all' || !groupId) {
+                alert('Please select a specific group to rename.');
+                return;
+            }
+            
+            const selectedOption = groupSelect.options[groupSelect.selectedIndex];
+            const currentName = selectedOption.dataset.rawName;
+            
+            const newName = prompt('Enter new name for the group:', currentName);
+            if (newName && newName.trim() !== '' && newName !== currentName) {
+                const prevText = renameGroupBtn.textContent;
+                renameGroupBtn.textContent = '⏳';
+                try {
+                    const res = await fetch(`/api/groups/${encodeURIComponent(groupId)}/rename`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newName.trim() })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        selectedOption.dataset.rawName = newName.trim();
+                        const brandStr = selectedOption.dataset.brand === 'parappanagadi' ? 'Parappanagadi Times' : 'Mattannur Vision';
+                        selectedOption.textContent = `${newName.trim()} [${brandStr}]`;
+                        showStatus('Group renamed successfully!', 'success');
+                    } else {
+                        showStatus(data.error || 'Failed to rename group.', 'error');
+                    }
+                } catch (e) {
+                    showStatus('Error renaming group.', 'error');
+                } finally {
+                    renameGroupBtn.textContent = prevText;
+                }
+            }
+        });
+
+        const changeBrandBtn = document.getElementById('changeBrandBtn');
+        changeBrandBtn?.addEventListener('click', async () => {
+            const groupId = groupSelect?.value;
+            if (groupId === 'all' || !groupId) {
+                alert('Please select a specific group to change brand.');
+                return;
+            }
+            
+            const selectedOption = groupSelect.options[groupSelect.selectedIndex];
+            const currentBrand = selectedOption.dataset.brand || 'mattannur';
+            const rawName = selectedOption.dataset.rawName;
+            
+            const newBrand = prompt('Enter new brand for this group ("mattannur" or "parappanagadi"):', currentBrand);
+            if (newBrand && (newBrand.trim() === 'mattannur' || newBrand.trim() === 'parappanagadi') && newBrand.trim() !== currentBrand) {
+                const prevText = changeBrandBtn.textContent;
+                changeBrandBtn.textContent = '⏳';
+                try {
+                    const res = await fetch(`/api/groups/${encodeURIComponent(groupId)}/brand`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ brand: newBrand.trim() })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        selectedOption.dataset.brand = newBrand.trim();
+                        const brandStr = newBrand.trim() === 'parappanagadi' ? 'Parappanagadi Times' : 'Mattannur Vision';
+                        selectedOption.textContent = `${rawName} [${brandStr}]`;
+                        showStatus('Brand updated successfully!', 'success');
+                    } else {
+                        showStatus(data.error || 'Failed to update brand.', 'error');
+                    }
+                } catch (e) {
+                    showStatus('Error updating brand.', 'error');
+                } finally {
+                    changeBrandBtn.textContent = prevText;
+                }
+            } else if (newBrand && newBrand.trim() !== currentBrand) {
+                alert('Invalid brand. Must be "mattannur" or "parappanagadi".');
+            }
+        });
+
+        // Send alert
+        sendBtn?.addEventListener('click', async () => {
+            const message = document.getElementById('newsMessage')?.value.trim();
+            const groupId = groupSelect?.value;
+
+            if (!message) {
+                showStatus('Please enter a message to send.', 'error');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+
+            try {
+                const res = await fetch('/api/send-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, groupId })
+                });
+
+                const result = await res.json();
+                
+                if (result.success) {
+                    showStatus(result.message, 'success');
+                    if (document.getElementById('newsMessage')) document.getElementById('newsMessage').value = ''; // clear
+                } else {
+                    showStatus(result.error || 'Failed to send alert.', 'error');
+                }
+            } catch (error) {
+                showStatus('Network error while sending alert.', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send Alert via WhatsApp';
+            }
+        });
+
+        function showStatus(msg, type) {
+            if (!statusMsg) return;
+            statusMsg.textContent = msg;
+            statusMsg.className = 'status ' + type;
+            statusMsg.style.display = 'block';
+            setTimeout(() => {
+                statusMsg.style.display = 'none';
+                statusMsg.className = 'status';
+            }, 5000);
+        }
+        
+        // Settings Logic
+        const checkInterval = document.getElementById('checkInterval');
+        const sendImages = document.getElementById('sendImages');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const sourceCheckboxes = document.querySelectorAll('.news-source');
+        
+        try {
+            const res = await fetch('/api/settings');
+            const settings = await res.json();
+            
+            if (checkInterval && settings.check_interval) checkInterval.value = settings.check_interval;
+            if (sendImages && settings.send_images !== undefined) sendImages.checked = settings.send_images === 'true';
+            
+            if (settings.active_sources && sourceCheckboxes.length > 0) {
+                const active = JSON.parse(settings.active_sources);
+                sourceCheckboxes.forEach(cb => {
+                    cb.checked = active.includes(cb.value);
+                });
+            }
+
+            // Restore Daily Poster layout: server DB layout takes priority, fallback to localStorage
+            let layoutToApply = null;
+            if (settings.daily_poster_layout) {
+                try {
+                    layoutToApply = typeof settings.daily_poster_layout === 'string' ? JSON.parse(settings.daily_poster_layout) : settings.daily_poster_layout;
+                } catch (e) {}
+            }
+            if (!layoutToApply) {
+                const local = localStorage.getItem('dailyPosterLayout');
+                if (local) {
+                    try { layoutToApply = JSON.parse(local); } catch (e) {}
+                }
+            }
+
+            // Purge outdated unaligned layout if present (< 100px left)
+            if (layoutToApply && layoutToApply['#previewEngMonth'] && parseFloat(layoutToApply['#previewEngMonth'].left) < 100) {
+                console.warn('Purging legacy unaligned layout from browser storage and database');
+                localStorage.removeItem('dailyPosterLayout');
+                layoutToApply = {
+                    '.eng-day-year': { left: '140px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                    '#previewEngMonth': { left: '170px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                    '#previewEngDate': { left: '170px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                    '.mal-day-year': { left: '580px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                    '#previewMalMonth': { left: '610px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                    '#previewMalDate': { left: '610px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                    '#previewHijriYear': { left: '350px', top: '1390px', fontSize: '35px', fontWeight: '700', color: '#000000' },
+                    '#previewHijriMonth': { left: '380px', top: '1475px', fontSize: '30px', fontWeight: '800', color: '#ffffff' },
+                    '#previewHijriDate': { left: '380px', top: '1565px', fontSize: '130px', fontWeight: '700', color: '#000000' }
+                };
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ daily_poster_layout: layoutToApply })
+                });
+            }
+
+            if (layoutToApply && typeof applyDailyPosterLayout === 'function') {
+                applyDailyPosterLayout(layoutToApply);
+                localStorage.setItem('dailyPosterLayout', JSON.stringify(layoutToApply));
+            }
+        } catch(e) {
+            console.error('Failed to load settings');
+        }
+        
+        saveSettingsBtn?.addEventListener('click', async () => {
+            const active_sources = Array.from(sourceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            
+            saveSettingsBtn.disabled = true;
+            saveSettingsBtn.textContent = 'Saving...';
+            
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        check_interval: checkInterval ? checkInterval.value : '30',
+                        send_images: sendImages ? sendImages.checked : true,
+                        active_sources
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showStatus('Settings saved successfully!', 'success');
+                } else {
+                    showStatus('Failed to save settings.', 'error');
+                }
+            } catch (e) {
+                showStatus('Network error saving settings.', 'error');
+            } finally {
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.textContent = 'Save Settings';
+            }
+        });
+        
+        // Poster Studio Logic
+        const posterTitleEl = document.getElementById('posterTitle');
+        const posterSubheadingEl = document.getElementById('posterSubheading');
+        const posterCatEl = document.getElementById('posterCategory');
+        const posterBrandEl = document.getElementById('posterBrand');
+        const previewTitleEl = document.getElementById('previewTitle');
+        const previewSubheadingEl = document.getElementById('previewSubheading');
+        const previewCatEl = document.getElementById('previewCategory');
+        const previewBrandEl = document.getElementById('previewBrand');
+        const showPosterDateEl = document.getElementById('showPosterDate');
+        const previewDateEl = document.getElementById('previewDate');
+
+        function updatePosterPreview() {
+            if (posterTitleEl && previewTitleEl) {
+                previewTitleEl.textContent = posterTitleEl.value.trim() || 'Enter headline...';
+            }
+            if (posterSubheadingEl && previewSubheadingEl) {
+                const val = posterSubheadingEl.value.trim();
+                previewSubheadingEl.textContent = val;
+                previewSubheadingEl.style.display = val ? 'block' : 'none';
+            }
+            if (posterCatEl && previewCatEl) {
+                previewCatEl.textContent = posterCatEl.value.trim() || 'BREAKING NEWS';
+            }
+            if (posterBrandEl && previewBrandEl) {
+                const parts = posterBrandEl.value.split(' ');
+                previewBrandEl.innerHTML = `${parts[0]} <span style="color: #f1faee;">${parts.slice(1).join(' ')}</span>`;
+            }
+        }
+
+        if (posterTitleEl) {
+            ['input', 'keyup', 'change', 'paste', 'compositionend'].forEach(evt => {
+                posterTitleEl.addEventListener(evt, updatePosterPreview);
+            });
+        }
+        if (posterSubheadingEl) {
+            ['input', 'keyup', 'change', 'paste', 'compositionend'].forEach(evt => {
+                posterSubheadingEl.addEventListener(evt, updatePosterPreview);
+            });
+        }
+
+        // Inline preview editing sync for Breaking News Poster
+        if (previewTitleEl) {
+            previewTitleEl.addEventListener('input', () => {
+                if (posterTitleEl) posterTitleEl.value = previewTitleEl.textContent;
+            });
+        }
+        if (previewCatEl) {
+            previewCatEl.addEventListener('input', () => {
+                if (posterCatEl) posterCatEl.value = previewCatEl.textContent;
+            });
+        }
+        if (previewSubheadingEl) {
+            previewSubheadingEl.addEventListener('input', () => {
+                if (posterSubheadingEl) posterSubheadingEl.value = previewSubheadingEl.textContent;
+            });
+        }
+        if (showPosterDateEl && previewDateEl) {
+            showPosterDateEl.addEventListener('change', e => {
+                previewDateEl.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+        if (posterCatEl) {
+            ['input', 'keyup', 'change', 'paste', 'compositionend'].forEach(evt => {
+                posterCatEl.addEventListener(evt, updatePosterPreview);
+            });
+        }
+        if (posterBrandEl) {
+            ['change', 'input'].forEach(evt => {
+                posterBrandEl.addEventListener(evt, updatePosterPreview);
+            });
+        }
+
+        // Trigger initial update on load
+        updatePosterPreview();
+        document.getElementById('posterImageInput')?.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewBg = document.getElementById('previewBg');
+                    if (previewBg) previewBg.style.backgroundImage = `url(${e.target.result})`;
+                    // Reset sliders when new image is uploaded
+                    if (document.getElementById('bgZoom')) document.getElementById('bgZoom').value = 100;
+                    if (document.getElementById('zoomVal')) document.getElementById('zoomVal').textContent = 'Cover';
+                    if (document.getElementById('bgPosX')) document.getElementById('bgPosX').value = 50;
+                    if (document.getElementById('posXVal')) document.getElementById('posXVal').textContent = 'Center';
+                    if (document.getElementById('bgPosY')) document.getElementById('bgPosY').value = 50;
+                    if (document.getElementById('posYVal')) document.getElementById('posYVal').textContent = 'Center';
+                    if (previewBg) {
+                        previewBg.style.backgroundSize = 'cover';
+                        previewBg.style.backgroundPosition = 'center center';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Paste from Clipboard Logic
+        const pasteZone = document.getElementById('pasteZone');
+        
+        // Focus the zone when clicked
+        pasteZone?.addEventListener('click', () => {
+            pasteZone.focus();
+        });
+
+        // Listen for paste specifically on the pasteZone, and fallback to document
+        const handlePaste = (e) => {
+            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+            if (!items) return;
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+                    e.preventDefault(); // prevent default paste behavior
+                    
+                    const file = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const previewBg = document.getElementById('previewBg');
+                        if (previewBg) previewBg.style.backgroundImage = `url(${event.target.result})`;
+                        // Reset sliders
+                        if (document.getElementById('bgZoom')) document.getElementById('bgZoom').value = 100;
+                        if (document.getElementById('zoomVal')) document.getElementById('zoomVal').textContent = 'Cover';
+                        if (document.getElementById('bgPosX')) document.getElementById('bgPosX').value = 50;
+                        if (document.getElementById('posXVal')) document.getElementById('posXVal').textContent = 'Center';
+                        if (document.getElementById('bgPosY')) document.getElementById('bgPosY').value = 50;
+                        if (document.getElementById('posYVal')) document.getElementById('posYVal').textContent = 'Center';
+                        if (previewBg) {
+                            previewBg.style.backgroundSize = 'cover';
+                            previewBg.style.backgroundPosition = 'center center';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    break; // Only grab the first image
+                }
+            }
+        };
+        
+        pasteZone?.addEventListener('paste', handlePaste);
+        document.addEventListener('paste', handlePaste); // Global fallback
+        
+        // Background Adjustment Logic
+        const updateBgPosition = () => {
+            const posXEl = document.getElementById('bgPosX');
+            const posYEl = document.getElementById('bgPosY');
+            const posX = posXEl ? posXEl.value : 50;
+            const posY = posYEl ? posYEl.value : 50;
+            if (document.getElementById('posXVal')) document.getElementById('posXVal').textContent = posX + '%';
+            if (document.getElementById('posYVal')) document.getElementById('posYVal').textContent = posY + '%';
+            if (document.getElementById('previewBg')) document.getElementById('previewBg').style.backgroundPosition = `${posX}% ${posY}%`;
+        };
+
+        const bgZoom = document.getElementById('bgZoom');
+        const bgPosX = document.getElementById('bgPosX');
+        const bgPosY = document.getElementById('bgPosY');
+        const bgOverlay = document.getElementById('bgOverlay');
+        const titleSize = document.getElementById('titleSize');
+        const titleColor = document.getElementById('titleColor');
+        const badgeColor = document.getElementById('badgeColor');
+
+        ['input', 'change'].forEach(evt => {
+            bgZoom?.addEventListener(evt, e => {
+                const val = e.target.value;
+                if (document.getElementById('zoomVal')) document.getElementById('zoomVal').textContent = val + '%';
+                if (document.getElementById('previewBg')) document.getElementById('previewBg').style.backgroundSize = val + '%';
+            });
+            bgPosX?.addEventListener(evt, updateBgPosition);
+            bgPosY?.addEventListener(evt, updateBgPosition);
+        });
+        
+        bgOverlay?.addEventListener('input', e => {
+            const val = e.target.value;
+            if (document.getElementById('overlayVal')) document.getElementById('overlayVal').textContent = val + '%';
+            const gradient = document.querySelector('.preview-gradient');
+            if (gradient) gradient.style.backgroundColor = `rgba(0,0,0,${val / 100})`;
+        });
+        
+        // Text Adjustment Logic
+        titleSize?.addEventListener('input', e => {
+            const val = e.target.value;
+            if (document.getElementById('textSizeVal')) document.getElementById('textSizeVal').textContent = val + 'px';
+            if (document.getElementById('previewTitle')) document.getElementById('previewTitle').style.fontSize = val + 'px';
+        });
+        
+        titleColor?.addEventListener('input', e => {
+            if (document.getElementById('previewTitle')) document.getElementById('previewTitle').style.color = e.target.value;
+        });
+
+        badgeColor?.addEventListener('input', e => {
+            const badge = document.getElementById('previewCategory');
+            if (badge) badge.style.backgroundColor = e.target.value;
+            const dot = document.querySelector('.live-dot');
+            if (dot) {
+                dot.style.backgroundColor = e.target.value;
+                dot.style.boxShadow = `0 0 10px ${e.target.value}`;
+            }
+        });
+
+        // Reset Button Logic
+        document.getElementById('resetPosterBtn')?.addEventListener('click', () => {
+            if (document.getElementById('posterTitle')) document.getElementById('posterTitle').value = '';
+            if (document.getElementById('posterCategory')) document.getElementById('posterCategory').value = 'BREAKING NEWS';
+            
+            // Reset image
+            const previewBg = document.getElementById('previewBg');
+            if (previewBg) previewBg.style.backgroundImage = `url('https://via.placeholder.com/1080x700?text=Upload+Image')`;
+            
+            // Reset sliders
+            if (document.getElementById('bgZoom')) document.getElementById('bgZoom').value = 100;
+            if (document.getElementById('zoomVal')) document.getElementById('zoomVal').textContent = 'Cover';
+            if (document.getElementById('bgPosX')) document.getElementById('bgPosX').value = 50;
+            if (document.getElementById('posXVal')) document.getElementById('posXVal').textContent = 'Center';
+            if (document.getElementById('bgPosY')) document.getElementById('bgPosY').value = 50;
+            if (document.getElementById('posYVal')) document.getElementById('posYVal').textContent = 'Center';
+            if (previewBg) {
+                previewBg.style.backgroundSize = 'cover';
+                previewBg.style.backgroundPosition = 'center center';
+            }
+            
+            // Reset Appearance
+            if (document.getElementById('titleSize')) document.getElementById('titleSize').value = 56;
+            if (document.getElementById('textSizeVal')) document.getElementById('textSizeVal').textContent = '56px';
+            if (document.getElementById('previewTitle')) document.getElementById('previewTitle').style.fontSize = '56px';
+            
+            if (document.getElementById('titleColor')) document.getElementById('titleColor').value = '#ffffff';
+            if (document.getElementById('previewTitle')) document.getElementById('previewTitle').style.color = '#ffffff';
+            
+            if (document.getElementById('badgeColor')) document.getElementById('badgeColor').value = '#E63946';
+            if (document.getElementById('previewCategory')) document.getElementById('previewCategory').style.backgroundColor = '#E63946';
+            const dot = document.querySelector('.live-dot');
+            if (dot) {
+                dot.style.backgroundColor = '#E63946';
+                dot.style.boxShadow = `0 0 10px #E63946`;
+            }
+            
+            updatePosterPreview();
+        });
+        
+        document.getElementById('downloadPosterBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('downloadPosterBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+            
+            const canvasEl = document.getElementById('posterCanvas');
+            // Temporarily remove scale for high res render
+            if (canvasEl) canvasEl.style.transform = 'scale(1)';
+            
+            try {
+                const canvas = await html2canvas(canvasEl, { scale: 1, useCORS: true, backgroundColor: '#111' });
+                const link = document.createElement('a');
+                link.download = 'breaking-news-poster.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            } catch (err) {
+                alert('Failed to generate poster. Ensure you are uploading a valid image.');
+            }
+            
+            if (canvasEl) canvasEl.style.transform = 'scale(0.3)'; // restore scale
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+
+        // Initialize Live Date for Poster
+        const days = ['ഞായർ', 'തിങ്കൾ', 'ചൊവ്വ', 'ബുധൻ', 'വ്യാഴം', 'വെള്ളി', 'ശനി'];
+        const months = ['ജനുവരി', 'ഫെബ്രുവരി', 'മാർച്ച്', 'ഏപ്രിൽ', 'മെയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗസ്റ്റ്', 'സെപ്റ്റംബർ', 'ഒക്ടോബർ', 'നവംബർ', 'ഡിസംബർ'];
+        const d = new Date();
+        document.getElementById('previewDate').textContent = `(${d.getFullYear()}. ${months[d.getMonth()]} ${d.getDate()}(${days[d.getDay()]} ))`;
+
+        // Set Default Daily Poster Dates
+        const updateDefaultDateText = (id, val) => {
+            const el = document.getElementById(id);
+            if(el) el.innerText = val;
+        };
+        
+        if (document.getElementById('previewEngDay')) {
+            const engDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const engMonths = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+            
+            updateDefaultDateText('previewEngDay', engDays[d.getDay()]);
+            updateDefaultDateText('previewEngYear', d.getFullYear());
+            updateDefaultDateText('previewEngMonth', engMonths[d.getMonth()]);
+            updateDefaultDateText('previewEngDate', String(d.getDate()).padStart(2, '0'));
+
+            // Auto-calculate Malayalam Day, Year, Month, Date
+            const malDays = ['ഞായർ', 'തിങ്കൾ', 'ചൊവ്വ', 'ബുധൻ', 'വ്യാഴം', 'വെള്ളി', 'ശനി'];
+            const malSankrantis = [
+                { month: 'മകരം', gMonth: 0, gDay: 15 },
+                { month: 'കുംഭം', gMonth: 1, gDay: 14 },
+                { month: 'മീനം', gMonth: 2, gDay: 15 },
+                { month: 'മേടം', gMonth: 3, gDay: 14 },
+                { month: 'ഇടവം', gMonth: 4, gDay: 15 },
+                { month: 'മിഥുനം', gMonth: 5, gDay: 16 },
+                { month: 'കർക്കിടകം', gMonth: 6, gDay: 17 },
+                { month: 'ചിങ്ങം', gMonth: 7, gDay: 17 },
+                { month: 'കന്നി', gMonth: 8, gDay: 17 },
+                { month: 'തുലാം', gMonth: 9, gDay: 18 },
+                { month: 'വൃശ്ചികം', gMonth: 10, gDay: 17 },
+                { month: 'ധനു', gMonth: 11, gDay: 16 }
+            ];
+
+            const gYear = d.getFullYear();
+            const gMonth = d.getMonth();
+            const gDay = d.getDate();
+
+            let meYear = gYear - 825;
+            if (gMonth > 7 || (gMonth === 7 && gDay >= 17)) {
+                meYear = gYear - 824;
+            }
+
+            let currSankranti = malSankrantis[gMonth];
+            if (gDay < currSankranti.gDay) {
+                currSankranti = malSankrantis[(gMonth + 11) % 12];
+            }
+
+            let startDate = new Date(gYear, currSankranti.gMonth, currSankranti.gDay);
+            if (startDate > d) {
+                startDate = new Date(gYear - (currSankranti.gMonth === 11 ? 1 : 0), currSankranti.gMonth, currSankranti.gDay);
+            }
+            const diffDays = Math.floor(Math.abs(d - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+            updateDefaultDateText('previewMalDay', malDays[d.getDay()]);
+            updateDefaultDateText('previewMalYear', String(meYear));
+            updateDefaultDateText('previewMalMonth', currSankranti.month);
+            updateDefaultDateText('previewMalDate', String(diffDays).padStart(2, '0'));
+            
+            try {
+                const hijriFormatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {day: '2-digit', month: 'long', year: 'numeric'});
+                const hijriParts = hijriFormatter.formatToParts(d);
+                const hMonth = hijriParts.find(p => p.type === 'month');
+                const hDay = hijriParts.find(p => p.type === 'day');
+                const hYear = hijriParts.find(p => p.type === 'year');
+                
+                if (hYear) updateDefaultDateText('previewHijriYear', hYear.value.split(' ')[0]);
+                if (hMonth) updateDefaultDateText('previewHijriMonth', hMonth.value);
+                if (hDay) updateDefaultDateText('previewHijriDate', String(parseInt(hDay.value, 10)).padStart(2, '0'));
+            } catch (e) {
+                console.error('Hijri date formatting failed:', e);
+            }
+        }
+
+        // Daily Poster Send Logic
+        const sendDailyBtn = document.getElementById('sendDailyBtn');
+        if (sendDailyBtn) {
+            sendDailyBtn.addEventListener('click', async () => {
+                const groupId = document.getElementById('dailyGroupSelect').value;
+                
+                const getText = (id, fallback) => {
+                    const el = document.getElementById(id);
+                    return el ? el.innerText.trim() : fallback;
+                };
+
+                const getElementStyle = (selector) => {
+                    const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+                    if (!el) return '';
+                    const style = window.getComputedStyle(el);
+                    let css = '';
+                    const left = el.style.left || style.left;
+                    const top = el.style.top || style.top;
+                    const fontSize = el.style.fontSize || style.fontSize;
+                    const fontWeight = el.style.fontWeight || style.fontWeight;
+                    const fontFamily = el.style.fontFamily || style.fontFamily;
+                    const lineHeight = el.style.lineHeight || style.lineHeight;
+                    const letterSpacing = el.style.letterSpacing || style.letterSpacing;
+                    const color = el.style.color || style.color;
+                    const fontStyle = el.style.fontStyle || style.fontStyle;
+                    const textTransform = el.style.textTransform || style.textTransform;
+
+                    if (left) css += `left: ${left}; `;
+                    if (top) css += `top: ${top}; `;
+                    if (fontSize) css += `font-size: ${fontSize}; `;
+                    if (fontWeight) css += `font-weight: ${fontWeight}; `;
+                    if (fontFamily) css += `font-family: ${fontFamily}; `;
+                    if (lineHeight && lineHeight !== 'normal') css += `line-height: ${lineHeight}; `;
+                    if (letterSpacing && letterSpacing !== 'normal') css += `letter-spacing: ${letterSpacing}; `;
+                    if (color) css += `color: ${color}; `;
+                    if (fontStyle) css += `font-style: ${fontStyle}; `;
+                    if (textTransform && textTransform !== 'none') css += `text-transform: ${textTransform}; `;
+                    return css;
+                };
+                
+                const data = {
+                    groupId,
+                    englishDay: getText('previewEngDay', 'Thursday'),
+                    englishYear: getText('previewEngYear', '2026'),
+                    englishMonth: getText('previewEngMonth', 'JULY'),
+                    englishDate: getText('previewEngDate', '23'),
+                    malayalamDay: getText('previewMalDay', 'വ്യാഴം'),
+                    malayalamYear: getText('previewMalYear', '1201'),
+                    malayalamMonth: getText('previewMalMonth', 'കർക്കിടകം'),
+                    malayalamDate: getText('previewMalDate', '07'),
+                    hijriYear: getText('previewHijriYear', '1448'),
+                    hijriMonth: getText('previewHijriMonth', 'Safar'),
+                    hijriDate: getText('previewHijriDate', '08'),
+
+                    engDayYearStyle: getElementStyle('.eng-day-year'),
+                    engMonthStyle: getElementStyle('#previewEngMonth'),
+                    engDateStyle: getElementStyle('#previewEngDate'),
+                    malDayYearStyle: getElementStyle('.mal-day-year'),
+                    malMonthStyle: getElementStyle('#previewMalMonth'),
+                    malDateStyle: getElementStyle('#previewMalDate'),
+                    hijriYearStyle: getElementStyle('#previewHijriYear'),
+                    hijriMonthStyle: getElementStyle('#previewHijriMonth'),
+                    hijriDateStyle: getElementStyle('#previewHijriDate'),
+                };
+                
+                sendDailyBtn.disabled = true;
+                sendDailyBtn.textContent = 'Generating & Sending...';
+                
+                try {
+                    const res = await fetch('/api/send-daily', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await res.json();
+                    if (result.success) {
+                        showStatus(result.message, 'success');
+                    } else {
+                        showStatus(result.error || 'Failed to send daily poster.', 'error');
+                    }
+                } catch (error) {
+                    showStatus('Network error while sending daily poster.', 'error');
+                } finally {
+                    sendDailyBtn.disabled = false;
+                    sendDailyBtn.textContent = 'Generate & Send Daily Poster';
+                }
+            });
+        }
+
+        // Daily Poster Preview Logic
+        const previewDailyBtn = document.getElementById('previewDailyBtn');
+        const previewModal = document.getElementById('previewModal');
+        const previewModalImg = document.getElementById('previewModalImg');
+        const closePreviewModalBtn = document.getElementById('closePreviewModalBtn');
+        const closePreviewModalBtn2 = document.getElementById('closePreviewModalBtn2');
+        const downloadPreviewModalBtn = document.getElementById('downloadPreviewModalBtn');
+        let currentPreviewDataUrl = '';
+
+        if (previewDailyBtn) {
+            previewDailyBtn.addEventListener('click', async () => {
+                const getText = (id, fallback) => {
+                    const el = document.getElementById(id);
+                    return el ? el.innerText.trim() : fallback;
+                };
+
+                const getElementStyle = (selector) => {
+                    const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+                    if (!el) return '';
+                    const style = window.getComputedStyle(el);
+                    let css = '';
+                    const left = el.style.left || style.left;
+                    const top = el.style.top || style.top;
+                    const fontSize = el.style.fontSize || style.fontSize;
+                    const fontWeight = el.style.fontWeight || style.fontWeight;
+                    const fontFamily = el.style.fontFamily || style.fontFamily;
+                    const lineHeight = el.style.lineHeight || style.lineHeight;
+                    const letterSpacing = el.style.letterSpacing || style.letterSpacing;
+                    const color = el.style.color || style.color;
+                    const fontStyle = el.style.fontStyle || style.fontStyle;
+                    const textTransform = el.style.textTransform || style.textTransform;
+
+                    if (left) css += `left: ${left}; `;
+                    if (top) css += `top: ${top}; `;
+                    if (fontSize) css += `font-size: ${fontSize}; `;
+                    if (fontWeight) css += `font-weight: ${fontWeight}; `;
+                    if (fontFamily) css += `font-family: ${fontFamily}; `;
+                    if (lineHeight && lineHeight !== 'normal') css += `line-height: ${lineHeight}; `;
+                    if (letterSpacing && letterSpacing !== 'normal') css += `letter-spacing: ${letterSpacing}; `;
+                    if (color) css += `color: ${color}; `;
+                    if (fontStyle) css += `font-style: ${fontStyle}; `;
+                    if (textTransform && textTransform !== 'none') css += `text-transform: ${textTransform}; `;
+                    return css;
+                };
+
+                const data = {
+                    englishDay: getText('previewEngDay', 'Thursday'),
+                    englishYear: getText('previewEngYear', '2026'),
+                    englishMonth: getText('previewEngMonth', 'JULY'),
+                    englishDate: getText('previewEngDate', '23'),
+                    malayalamDay: getText('previewMalDay', 'വ്യാഴം'),
+                    malayalamYear: getText('previewMalYear', '1201'),
+                    malayalamMonth: getText('previewMalMonth', 'കർക്കിടകം'),
+                    malayalamDate: getText('previewMalDate', '07'),
+                    hijriYear: getText('previewHijriYear', '1448'),
+                    hijriMonth: getText('previewHijriMonth', 'Safar'),
+                    hijriDate: getText('previewHijriDate', '08'),
+
+                    engDayYearStyle: getElementStyle('.eng-day-year'),
+                    engMonthStyle: getElementStyle('#previewEngMonth'),
+                    engDateStyle: getElementStyle('#previewEngDate'),
+                    malDayYearStyle: getElementStyle('.mal-day-year'),
+                    malMonthStyle: getElementStyle('#previewMalMonth'),
+                    malDateStyle: getElementStyle('#previewMalDate'),
+                    hijriYearStyle: getElementStyle('#previewHijriYear'),
+                    hijriMonthStyle: getElementStyle('#previewHijriMonth'),
+                    hijriDateStyle: getElementStyle('#previewHijriDate'),
+                };
+
+                const prevText = previewDailyBtn.textContent;
+                previewDailyBtn.disabled = true;
+                previewDailyBtn.textContent = '⏳ Rendering Preview...';
+
+                try {
+                    const res = await fetch('/api/preview-daily', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (result.success && result.image) {
+                        currentPreviewDataUrl = result.image;
+                        previewModalImg.src = result.image;
+                        previewModal.style.display = 'flex';
+                    } else {
+                        showStatus(result.error || 'Failed to generate preview.', 'error');
+                    }
+                } catch (err) {
+                    showStatus('Network error generating preview.', 'error');
+                } finally {
+                    previewDailyBtn.disabled = false;
+                    previewDailyBtn.textContent = prevText || '👁️ Preview Poster';
+                }
+            });
+        }
+
+        const hidePreviewModal = () => {
+            if (previewModal) previewModal.style.display = 'none';
+        };
+        closePreviewModalBtn?.addEventListener('click', hidePreviewModal);
+        closePreviewModalBtn2?.addEventListener('click', hidePreviewModal);
+        previewModal?.addEventListener('click', (e) => {
+            if (e.target === previewModal) hidePreviewModal();
+        });
+
+        downloadPreviewModalBtn?.addEventListener('click', () => {
+            if (!currentPreviewDataUrl) return;
+            const a = document.createElement('a');
+            a.href = currentPreviewDataUrl;
+            a.download = `daily_poster_${new Date().toISOString().slice(0,10)}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        // Daily Template Upload Logic
+        const handleDailyTemplateUpload = (file) => {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64 = event.target.result;
+                    
+                    const previewCanvas = document.getElementById('dailyPosterCanvas');
+                    if (previewCanvas) {
+                        previewCanvas.style.backgroundImage = `url(${base64})`;
+                    }
+                    
+                    const prevText = sendDailyBtn ? sendDailyBtn.textContent : '';
+                    if (sendDailyBtn) {
+                        sendDailyBtn.textContent = 'Uploading Template...';
+                        sendDailyBtn.disabled = true;
+                    }
+                    try {
+                        const res = await fetch('/api/upload-daily-template', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ imageBase64: base64 })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            showStatus('Daily template uploaded and saved successfully!', 'success');
+                            // Update visual feedback in the paste zone
+                            const pasteZone = document.getElementById('dailyPasteZone');
+                            if (pasteZone) {
+                                pasteZone.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                                        <div style="color: #4CAF50; font-size: 32px; margin-bottom: 10px;">✅</div>
+                                        <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">Template Uploaded Successfully!</div>
+                                        <img src="${base64}" style="max-height: 80px; max-width: 100%; object-fit: contain; border-radius: 4px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);" />
+                                        <div style="font-size: 11px; margin-top: 10px; color: rgba(255,255,255,0.5);">Click or drop again to replace</div>
+                                    </div>
+                                    <input type="file" id="dailyTemplateUpload" accept="image/*" class="poster-file-input paste-input" title="Upload Background Template">
+                                `;
+                                // Re-attach listener since we replaced the input
+                                document.getElementById('dailyTemplateUpload').addEventListener('change', (e) => {
+                                    handleDailyTemplateUpload(e.target.files[0]);
+                                });
+                            }
+                        } else {
+                            showStatus('Failed to save template.', 'error');
+                        }
+                    } catch (e) {
+                        showStatus('Network error while uploading template.', 'error');
+                    } finally {
+                        if (sendDailyBtn) {
+                            sendDailyBtn.textContent = prevText || 'Generate & Send Daily Poster';
+                            sendDailyBtn.disabled = false;
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        const dailyFileInput = document.getElementById('dailyTemplateUpload');
+        if (dailyFileInput) {
+            dailyFileInput.addEventListener('change', (e) => {
+                handleDailyTemplateUpload(e.target.files[0]);
+            });
+        }
+        
+        const dailyPasteZone = document.getElementById('dailyPasteZone');
+        if (dailyPasteZone) {
+            dailyPasteZone.addEventListener('paste', (e) => {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        e.preventDefault();
+                        handleDailyTemplateUpload(item.getAsFile());
+                        break;
+                    }
+                }
+            });
+        }
+
+        // --- Drag and Drop functionality for text overlays ---
+        const draggables = document.querySelectorAll('.draggable');
+        let activeDragEl = null;
+        let isDragging = false;
+        let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+
+        function onPointerDown(e) {
+            const touch = e.touches ? e.touches[0] : e;
+            activeDragEl = this;
+            isDragging = false;
+            
+            const style = window.getComputedStyle(this);
+            initialLeft = parseFloat(style.left) || 0;
+            initialTop = parseFloat(style.top) || 0;
+            startX = touch.clientX;
+            startY = touch.clientY;
+        }
+
+        function onPointerMove(e) {
+            if (!activeDragEl) return;
+            const touch = e.touches ? e.touches[0] : e;
+            let scale = 0.3;
+            const canvasEl = activeDragEl.closest('.poster-canvas');
+            if (canvasEl && canvasEl.style.transform) {
+                const match = canvasEl.style.transform.match(/scale\(([0-9.]+)\)/);
+                if (match && match[1]) scale = parseFloat(match[1]);
+            }
+            const dx = (touch.clientX - startX) / scale;
+            const dy = (touch.clientY - startY) / scale;
+
+            if (!isDragging && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                isDragging = true;
+            }
+
+            if (isDragging) {
+                activeDragEl.style.left = `${initialLeft + dx}px`;
+                activeDragEl.style.top = `${initialTop + dy}px`;
+                if (e.cancelable) e.preventDefault();
+            }
+        }
+
+        // --- Daily Poster Layout Persistence Helper Functions ---
+        const ALL_DAILY_SELECTORS = [
+            '.eng-day-year', '#previewEngMonth', '#previewEngDate',
+            '.mal-day-year', '#previewMalMonth', '#previewMalDate',
+            '#previewHijriYear', '#previewHijriMonth', '#previewHijriDate'
+        ];
+
+        function colorToHex(colorStr) {
+            if (!colorStr) return '#000000';
+            if (colorStr.startsWith('#')) return colorStr;
+            const ctx = document.createElement('canvas').getContext('2d');
+            ctx.fillStyle = colorStr;
+            return ctx.fillStyle;
+        }
+
+        function getCurrentDailyPosterLayout() {
+            const layout = {};
+            ALL_DAILY_SELECTORS.forEach(selector => {
+                const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+                if (el) {
+                    const style = window.getComputedStyle(el);
+                    layout[selector] = {
+                        left: el.style.left || style.left,
+                        top: el.style.top || style.top,
+                        fontSize: el.style.fontSize || style.fontSize,
+                        fontWeight: el.style.fontWeight || style.fontWeight,
+                        fontFamily: el.style.fontFamily || style.fontFamily,
+                        lineHeight: el.style.lineHeight || style.lineHeight,
+                        letterSpacing: el.style.letterSpacing || style.letterSpacing,
+                        color: el.style.color || style.color,
+                        fontStyle: el.style.fontStyle || style.fontStyle,
+                        textTransform: el.style.textTransform || style.textTransform
+                    };
+                }
+            });
+            return layout;
+        }
+
+        function applyDailyPosterLayout(layout) {
+            if (!layout) return;
+            Object.keys(layout).forEach(selector => {
+                const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+                if (el && layout[selector]) {
+                    const s = layout[selector];
+                    if (s.left !== undefined && s.left !== '') el.style.left = s.left;
+                    if (s.top !== undefined && s.top !== '') el.style.top = s.top;
+                    if (s.fontSize !== undefined && s.fontSize !== '') el.style.fontSize = s.fontSize;
+                    if (s.fontWeight !== undefined && s.fontWeight !== '') el.style.fontWeight = s.fontWeight;
+                    if (s.fontFamily !== undefined && s.fontFamily !== '') el.style.fontFamily = s.fontFamily;
+                    if (s.lineHeight !== undefined && s.lineHeight !== '') el.style.lineHeight = s.lineHeight;
+                    if (s.letterSpacing !== undefined && s.letterSpacing !== '') el.style.letterSpacing = s.letterSpacing;
+                    if (s.color !== undefined && s.color !== '') el.style.color = s.color;
+                    if (s.fontStyle !== undefined && s.fontStyle !== '') el.style.fontStyle = s.fontStyle;
+                    if (s.textTransform !== undefined && s.textTransform !== '') el.style.textTransform = s.textTransform;
+                }
+            });
+            if (typeof highlightSelectedElement === 'function') {
+                highlightSelectedElement();
+            }
+        }
+
+        function autoSaveDailyPosterLayout() {
+            const layout = getCurrentDailyPosterLayout();
+            localStorage.setItem('dailyPosterLayout', JSON.stringify(layout));
+        }
+
+        document.getElementById('saveDailyLayoutBtn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveDailyLayoutBtn');
+            const layout = getCurrentDailyPosterLayout();
+            
+            localStorage.setItem('dailyPosterLayout', JSON.stringify(layout));
+            
+            const prevText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Saving...';
+            
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ daily_poster_layout: layout })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showStatus('✅ Daily Poster layout saved permanently!', 'success');
+                    alert('✅ Layout saved successfully to database!');
+                } else {
+                    showStatus('Failed to save layout to server.', 'error');
+                    alert('❌ Failed to save layout: ' + (result.error || 'Server error'));
+                }
+            } catch (err) {
+                showStatus('Network error while saving layout.', 'error');
+                alert('❌ Network error while saving layout.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = prevText || '💾 Save Layout';
+            }
+        });
+
+        function onPointerUp() {
+            if (activeDragEl) {
+                autoSaveDailyPosterLayout();
+            }
+            activeDragEl = null;
+            isDragging = false;
+        }
+
+        draggables.forEach(el => {
+            el.addEventListener('mousedown', function(e) {
+                const moveTargetSelect = document.getElementById('moveTargetSelect');
+                if (moveTargetSelect) {
+                    const selector = el.id ? `#${el.id}` : `.${el.classList[0]}`;
+                    const opt = Array.from(moveTargetSelect.options).find(o => o.value === selector);
+                    if (opt) moveTargetSelect.value = selector;
+                }
+                onPointerDown.call(this, e);
+            });
+            el.addEventListener('touchstart', function(e) {
+                const moveTargetSelect = document.getElementById('moveTargetSelect');
+                if (moveTargetSelect) {
+                    const selector = el.id ? `#${el.id}` : `.${el.classList[0]}`;
+                    const opt = Array.from(moveTargetSelect.options).find(o => o.value === selector);
+                    if (opt) moveTargetSelect.value = selector;
+                }
+                onPointerDown.call(this, e);
+            }, {passive: false});
+        });
+
+        document.addEventListener('mousemove', onPointerMove);
+        document.addEventListener('touchmove', onPointerMove, {passive: false});
+
+        document.addEventListener('mouseup', onPointerUp);
+        document.addEventListener('touchend', onPointerUp);
+
+        // --- Nudge & Character Panel Controller Logic ---
+        let nudgeStep = 20;
+        const moveTargetSelect = document.getElementById('moveTargetSelect');
+        const posXInput = document.getElementById('posXInput');
+        const posYInput = document.getElementById('posYInput');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        const fontWeightSelect = document.getElementById('fontWeightSelect');
+        const fontSizeInput = document.getElementById('fontSizeInput');
+        const lineHeightInput = document.getElementById('lineHeightInput');
+        const letterSpacingInput = document.getElementById('letterSpacingInput');
+        const textColorInput = document.getElementById('textColorInput');
+        const italicToggleBtn = document.getElementById('italicToggleBtn');
+        const uppercaseToggleBtn = document.getElementById('uppercaseToggleBtn');
+        const stepBtns = document.querySelectorAll('.step-btn');
+
+        function highlightSelectedElement() {
+            // Remove previous highlight
+            document.querySelectorAll('#dailyPosterCanvas .active-nudge-target').forEach(el => {
+                el.classList.remove('active-nudge-target');
+                el.style.boxShadow = '';
+            });
+
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el) {
+                el.classList.add('active-nudge-target');
+                el.style.boxShadow = '0 0 0 4px #E63946, 0 0 20px rgba(230, 57, 70, 0.9)';
+                
+                const style = window.getComputedStyle(el);
+                if (posXInput) posXInput.value = Math.round(parseFloat(style.left) || 0);
+                if (posYInput) posYInput.value = Math.round(parseFloat(style.top) || 0);
+                if (fontSizeInput) fontSizeInput.value = Math.round(parseFloat(style.fontSize) || 16);
+                
+                if (fontFamilySelect && (el.style.fontFamily || style.fontFamily)) {
+                    const family = el.style.fontFamily || style.fontFamily;
+                    const fontVal = Array.from(fontFamilySelect.options).find(o => o.value.toLowerCase().includes(family.toLowerCase().replace(/['"]/g, '')));
+                    if (fontVal) fontFamilySelect.value = fontVal.value;
+                }
+
+                if (fontWeightSelect) {
+                    let weight = el.style.fontWeight || style.fontWeight || '400';
+                    if (weight === 'normal') weight = '400';
+                    if (weight === 'bold') weight = '700';
+                    fontWeightSelect.value = weight;
+                }
+
+                if (lineHeightInput) {
+                    let lh = el.style.lineHeight || style.lineHeight;
+                    let lhVal = parseFloat(lh);
+                    if (isNaN(lhVal)) lhVal = 1.2;
+                    if (typeof lh === 'string' && lh.includes('px') && parseFloat(style.fontSize)) {
+                        lhVal = parseFloat((lhVal / parseFloat(style.fontSize)).toFixed(1));
+                    }
+                    lineHeightInput.value = lhVal;
+                }
+
+                if (letterSpacingInput) {
+                    let ls = el.style.letterSpacing || style.letterSpacing;
+                    letterSpacingInput.value = Math.round(parseFloat(ls) || 0);
+                }
+
+                if (textColorInput) {
+                    let color = el.style.color || style.color;
+                    if (color) {
+                        let hexColor = colorToHex(color);
+                        if (hexColor) {
+                            textColorInput.value = hexColor;
+                            if (document.getElementById('textColorHex')) {
+                                document.getElementById('textColorHex').textContent = hexColor.toUpperCase();
+                            }
+                        }
+                    }
+                }
+
+                if (italicToggleBtn) {
+                    const isItalic = (el.style.fontStyle || style.fontStyle) === 'italic';
+                    italicToggleBtn.classList.toggle('active', isItalic);
+                }
+
+                if (uppercaseToggleBtn) {
+                    const isUpper = (el.style.textTransform || style.textTransform) === 'uppercase';
+                    uppercaseToggleBtn.classList.toggle('active', isUpper);
+                }
+            }
+        }
+
+        moveTargetSelect?.addEventListener('change', highlightSelectedElement);
+        highlightSelectedElement(); // Initial highlight
+
+        // Direct Position handlers
+        posXInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el) {
+                el.style.left = `${posXInput.value}px`;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        posYInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el) {
+                el.style.top = `${posYInput.value}px`;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        // Direct Character Panel handlers
+        fontFamilySelect?.addEventListener('change', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && fontFamilySelect.value) {
+                el.style.fontFamily = fontFamilySelect.value;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        fontSizeInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && fontSizeInput.value) {
+                el.style.fontSize = `${fontSizeInput.value}px`;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        fontWeightSelect?.addEventListener('change', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && fontWeightSelect.value) {
+                el.style.fontWeight = fontWeightSelect.value;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        lineHeightInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && lineHeightInput.value) {
+                el.style.lineHeight = lineHeightInput.value;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        letterSpacingInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && letterSpacingInput.value !== undefined) {
+                el.style.letterSpacing = `${letterSpacingInput.value}px`;
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        textColorInput?.addEventListener('input', () => {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el && textColorInput.value) {
+                el.style.color = textColorInput.value;
+                if (document.getElementById('textColorHex')) {
+                    document.getElementById('textColorHex').textContent = textColorInput.value.toUpperCase();
+                }
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        italicToggleBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el) {
+                const isItalic = el.style.fontStyle === 'italic';
+                el.style.fontStyle = isItalic ? 'normal' : 'italic';
+                italicToggleBtn.classList.toggle('active', !isItalic);
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        uppercaseToggleBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (el) {
+                const isUpper = el.style.textTransform === 'uppercase';
+                el.style.textTransform = isUpper ? 'none' : 'uppercase';
+                uppercaseToggleBtn.classList.toggle('active', !isUpper);
+                autoSaveDailyPosterLayout();
+            }
+        });
+
+        stepBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                stepBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                nudgeStep = parseInt(btn.dataset.step, 10) || 20;
+            });
+        });
+
+        function nudgeElement(dx, dy) {
+            const selector = moveTargetSelect ? moveTargetSelect.value : '.eng-day-year';
+            const el = document.querySelector(`#dailyPosterCanvas ${selector}`);
+            if (!el) return;
+
+            const style = window.getComputedStyle(el);
+            const currentLeft = parseFloat(style.left) || 0;
+            const currentTop = parseFloat(style.top) || 0;
+
+            const newLeft = currentLeft + dx;
+            const newTop = currentTop + dy;
+
+            el.style.left = `${newLeft}px`;
+            el.style.top = `${newTop}px`;
+
+            if (posXInput) posXInput.value = Math.round(newLeft);
+            if (posYInput) posYInput.value = Math.round(newTop);
+
+            highlightSelectedElement();
+            autoSaveDailyPosterLayout();
+        }
+
+        document.getElementById('moveUpBtn')?.addEventListener('click', (e) => { e.preventDefault(); nudgeElement(0, -nudgeStep); });
+        document.getElementById('moveDownBtn')?.addEventListener('click', (e) => { e.preventDefault(); nudgeElement(0, nudgeStep); });
+        document.getElementById('moveLeftBtn')?.addEventListener('click', (e) => { e.preventDefault(); nudgeElement(-nudgeStep, 0); });
+        document.getElementById('moveRightBtn')?.addEventListener('click', (e) => { e.preventDefault(); nudgeElement(nudgeStep, 0); });
+
+        document.getElementById('moveResetBtn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            localStorage.removeItem('dailyPosterLayout');
+            const PERFECT_LAYOUT = {
+                '.eng-day-year': { left: '140px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                '#previewEngMonth': { left: '170px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                '#previewEngDate': { left: '170px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                '.mal-day-year': { left: '580px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                '#previewMalMonth': { left: '610px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                '#previewMalDate': { left: '610px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                '#previewHijriYear': { left: '350px', top: '1390px', fontSize: '35px', fontWeight: '700', color: '#000000' },
+                '#previewHijriMonth': { left: '380px', top: '1475px', fontSize: '30px', fontWeight: '800', color: '#ffffff' },
+                '#previewHijriDate': { left: '380px', top: '1565px', fontSize: '130px', fontWeight: '700', color: '#000000' }
+            };
+            if (typeof applyDailyPosterLayout === 'function') applyDailyPosterLayout(PERFECT_LAYOUT);
+            localStorage.setItem('dailyPosterLayout', JSON.stringify(PERFECT_LAYOUT));
+            try {
+                await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ daily_poster_layout: PERFECT_LAYOUT })
+                });
+            } catch(err) {}
+            showStatus('Reset all text positions & character styles to perfect default layout', 'success');
+        });
+
+        // Auto-select and populate controls when clicking text elements on daily poster canvas preview
+        document.querySelectorAll('#dailyPosterCanvas .editable-text, #dailyPosterCanvas .draggable').forEach(el => {
+            el.addEventListener('click', () => {
+                let targetSel = '';
+                if (el.id) {
+                    targetSel = `#${el.id}`;
+                } else if (el.classList.contains('eng-day-year')) {
+                    targetSel = '.eng-day-year';
+                } else if (el.classList.contains('mal-day-year')) {
+                    targetSel = '.mal-day-year';
+                } else {
+                    const parent = el.closest('.draggable');
+                    if (parent && parent.classList.contains('eng-day-year')) targetSel = '.eng-day-year';
+                    else if (parent && parent.classList.contains('mal-day-year')) targetSel = '.mal-day-year';
+                }
+
+                if (targetSel && moveTargetSelect) {
+                    moveTargetSelect.value = targetSel;
+                    moveTargetSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        // Also update highlight when clicking on elements in preview
+        // Dynamic Responsive Canvas Scale System
+        function updateCanvasScale() {
+            const panels = document.querySelectorAll('.preview-panel');
+            panels.forEach(panel => {
+                const wrapper = panel.querySelector('.preview-wrapper');
+                const canvas = panel.querySelector('.poster-canvas');
+                if (!wrapper || !canvas) return;
+
+                const isDaily = canvas.classList.contains('daily-poster-canvas');
+                const nativeWidth = 1080;
+                const nativeHeight = isDaily ? 1920 : 1080;
+
+                const panelWidth = panel.clientWidth - 40;
+                let scale = 0.3; // Standard desktop preview scale target
+
+                if (panelWidth > 50 && panelWidth < nativeWidth * scale) {
+                    scale = Math.max(0.18, Math.min(0.4, panelWidth / nativeWidth));
+                }
+
+                canvas.style.transform = `scale(${scale})`;
+                canvas.style.transformOrigin = 'top left';
+                wrapper.style.width = `${Math.round(nativeWidth * scale)}px`;
+                wrapper.style.height = `${Math.round(nativeHeight * scale)}px`;
+            });
+        }
+
+        window.addEventListener('resize', updateCanvasScale);
+        setTimeout(updateCanvasScale, 100);
+
+    });
+</script>
+    <!-- Poster Preview Modal -->
+    <div id="previewModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #111b21; border: 1px solid #222d34; border-radius: 12px; max-width: 90vw; max-height: 90vh; padding: 25px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; width: 600px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #222d34; padding-bottom: 10px;">
+                <h3 style="margin: 0; color: #fff; font-size: 20px;">🖼️ Daily Poster High-Res Preview</h3>
+                <button id="closePreviewModalBtn" style="background: none; border: none; color: #8696a0; font-size: 24px; cursor: pointer; padding: 0 8px;">✕</button>
+            </div>
+            <div style="flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; background: #0b141a; border-radius: 8px; padding: 15px; width: 100%;">
+                <img id="previewModalImg" src="" style="max-height: 65vh; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;" />
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 12px; width: 100%; justify-content: flex-end;">
+                <button id="downloadPreviewModalBtn" class="btn-blue" style="background: #25D366; color: #000; font-weight: bold;">⬇️ Download Poster Image</button>
+                <button id="closePreviewModalBtn2" class="btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
