@@ -46,7 +46,10 @@ client.on('qr', (qr) => {
     console.log('\n\n🚨 ACTION REQUIRED 🚨: Scan the QR code above or view http://localhost:3000/qr.png to authenticate.\n\n');
 });
 
+client.isClientReady = false;
+
 client.on('ready', () => {
+    client.isClientReady = true;
     console.log('✅ WhatsApp Client is ready and connected!');
 });
 
@@ -55,7 +58,19 @@ client.on('authenticated', () => {
 });
 
 client.on('auth_failure', msg => {
+    client.isClientReady = false;
     console.error('WhatsApp Authentication failure:', msg);
+});
+
+client.on('disconnected', (reason) => {
+    client.isClientReady = false;
+    console.warn('⚠️ WhatsApp Client was disconnected:', reason);
+    console.log('🔄 Attempting to re-initialize WhatsApp client...');
+    try {
+        client.initialize();
+    } catch (e) {
+        console.error('Failed to re-initialize client:', e.message);
+    }
 });
 
 module.exports = client;

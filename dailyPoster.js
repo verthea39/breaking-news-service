@@ -119,35 +119,35 @@ async function generateDailyPoster(data) {
           
           /* English Calendar Block */
           .eng-day-year {
-            position: absolute; top: 930px; left: 140px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-style: italic; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 937px; left: 163px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.1; font-family: 'Anek Malayalam', sans-serif;
           }
           .eng-month {
-            position: absolute; top: 1025px; left: 170px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+            position: absolute; top: 1052px; left: 187px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 51px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
           }
           .eng-date {
-            position: absolute; top: 1125px; left: 170px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1155px; left: 193px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 154px; font-family: 'Anek Malayalam', sans-serif; font-weight: 900; color: #000; line-height: 1;
           }
 
           /* Malayalam Calendar Block */
           .mal-day-year {
-            position: absolute; top: 930px; left: 580px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 940px; left: 597px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.1; font-family: 'Anek Malayalam', sans-serif;
           }
           .mal-month {
-            position: absolute; top: 1025px; left: 610px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+            position: absolute; top: 1052px; left: 637px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
           }
           .mal-date {
-            position: absolute; top: 1125px; left: 610px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1162px; left: 630px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 155px; font-family: 'Anek Malayalam', sans-serif; font-weight: 900; color: #000; line-height: 1;
           }
 
           /* Hijri Calendar Block */
           .hijri-year {
-            position: absolute; top: 1390px; left: 350px; text-align: center; width: 320px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000;
+            position: absolute; top: 1370px; left: 403px; text-align: center; width: 260px; font-size: 47px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000;
           }
           .hijri-month {
-            position: absolute; top: 1475px; left: 380px; text-align: center; width: 260px; font-size: 30px; font-weight: 800; color: #fff; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 1465px; left: 410px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 800; color: #fff; font-family: 'Anek Malayalam', sans-serif;
           }
           .hijri-date {
-            position: absolute; top: 1565px; left: 380px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1568px; left: 414px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 160px; font-family: 'Anek Malayalam', sans-serif; font-weight: 900; color: #000; line-height: 1;
           }
           
         </style>
@@ -201,6 +201,12 @@ async function generateDailyPoster(data) {
             html: html,
             type: 'jpeg',
             quality: 90,
+            waitUntil: 'networkidle0',
+            beforeScreenshot: async (page) => {
+                await page.evaluate(async () => {
+                    await document.fonts.ready;
+                });
+            },
             puppeteerArgs: {
                 executablePath: executablePath || undefined,
                 args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1080,1920'],

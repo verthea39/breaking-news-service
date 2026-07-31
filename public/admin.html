@@ -685,6 +685,9 @@
 
         #dailyPosterCanvas {
             background-color: #222;
+            background-size: 1080px 1920px;
+            background-position: center;
+            background-repeat: no-repeat;
         }
         .draggable {
             cursor: move;
@@ -697,31 +700,31 @@
             user-select: text;
         }
         #dailyPosterCanvas .eng-day-year {
-            position: absolute; top: 930px; left: 140px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-style: italic; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 915px; left: 140px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.1; font-style: italic; font-family: 'Anek Malayalam', sans-serif;
         }
         #dailyPosterCanvas .eng-month {
-            position: absolute; top: 1025px; left: 170px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+            position: absolute; top: 1035px; left: 170px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
         }
         #dailyPosterCanvas .eng-date {
-            position: absolute; top: 1125px; left: 170px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1135px; left: 170px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic; line-height: 1;
         }
         #dailyPosterCanvas .mal-day-year {
-            position: absolute; top: 930px; left: 580px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.2; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 915px; left: 580px; text-align: center; width: 320px; font-size: 45px; font-weight: 800; color: #000; line-height: 1.1; font-family: 'Anek Malayalam', sans-serif;
         }
         #dailyPosterCanvas .mal-month {
-            position: absolute; top: 1025px; left: 610px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
+            position: absolute; top: 1035px; left: 610px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #fff; letter-spacing: 2px;
         }
         #dailyPosterCanvas .mal-date {
-            position: absolute; top: 1125px; left: 610px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1135px; left: 610px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic; line-height: 1;
         }
         #dailyPosterCanvas .hijri-year {
-            position: absolute; top: 1390px; left: 350px; text-align: center; width: 320px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000;
+            position: absolute; top: 1385px; left: 380px; text-align: center; width: 260px; font-size: 35px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000;
         }
         #dailyPosterCanvas .hijri-month {
-            position: absolute; top: 1475px; left: 380px; text-align: center; width: 260px; font-size: 30px; font-weight: 800; color: #fff; font-family: 'Anek Malayalam', sans-serif;
+            position: absolute; top: 1475px; left: 380px; text-align: center; width: 260px; height: 75px; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 800; color: #fff; font-family: 'Anek Malayalam', sans-serif;
         }
         #dailyPosterCanvas .hijri-date {
-            position: absolute; top: 1565px; left: 380px; text-align: center; width: 260px; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic;
+            position: absolute; top: 1570px; left: 380px; text-align: center; width: 260px; height: 170px; display: flex; align-items: center; justify-content: center; font-size: 130px; font-family: 'Anek Malayalam', sans-serif; font-weight: 700; color: #000; font-style: italic; line-height: 1;
         }
 
         /* Restored Missing CSS */
@@ -935,6 +938,7 @@
                 </div>
         
                 <button id="saveSettingsBtn" class="btn-blue">Save Settings</button>
+                <button id="checkNewsNowBtn" class="btn-outline" style="margin-top: 15px; border-color: #25D366; color: #25D366; width: 100%;">⚡ Fetch & Broadcast Breaking News Now</button>
             
                 <div id="statusMsg" class="status"></div>
             </div>
@@ -1503,6 +1507,29 @@
             }
         });
         
+        const checkNewsNowBtn = document.getElementById('checkNewsNowBtn');
+        checkNewsNowBtn?.addEventListener('click', async () => {
+            const prevText = checkNewsNowBtn.textContent;
+            checkNewsNowBtn.disabled = true;
+            checkNewsNowBtn.textContent = '⏳ Checking Website & Broadcasting...';
+            try {
+                const res = await fetch('/api/check-news', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('✅ ' + data.message, 'success');
+                    alert('✅ ' + data.message);
+                } else {
+                    showStatus('❌ ' + (data.error || data.message || 'Failed to fetch news'), 'error');
+                    alert('❌ ' + (data.error || data.message || 'Failed to fetch news'));
+                }
+            } catch (e) {
+                showStatus('Network error while checking news.', 'error');
+            } finally {
+                checkNewsNowBtn.disabled = false;
+                checkNewsNowBtn.textContent = prevText;
+            }
+        });
+        
         // Poster Studio Logic
         const posterTitleEl = document.getElementById('posterTitle');
         const posterSubheadingEl = document.getElementById('posterSubheading');
@@ -1843,6 +1870,16 @@
             } catch (e) {
                 console.error('Hijri date formatting failed:', e);
             }
+        }
+
+        // Set background template image on dailyPosterCanvas if present
+        const dailyCanvas = document.getElementById('dailyPosterCanvas');
+        if (dailyCanvas) {
+            const templateImg = new Image();
+            templateImg.src = '/daily_template.jpg?t=' + Date.now();
+            templateImg.onload = () => {
+                dailyCanvas.style.backgroundImage = `url('${templateImg.src}')`;
+            };
         }
 
         // Daily Poster Send Logic
@@ -2537,15 +2574,15 @@
             e.preventDefault();
             localStorage.removeItem('dailyPosterLayout');
             const PERFECT_LAYOUT = {
-                '.eng-day-year': { left: '140px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
-                '#previewEngMonth': { left: '170px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
-                '#previewEngDate': { left: '170px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
-                '.mal-day-year': { left: '580px', top: '930px', fontSize: '45px', fontWeight: '800', color: '#000000' },
-                '#previewMalMonth': { left: '610px', top: '1025px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
-                '#previewMalDate': { left: '610px', top: '1125px', fontSize: '130px', fontWeight: '700', color: '#000000' },
-                '#previewHijriYear': { left: '350px', top: '1390px', fontSize: '35px', fontWeight: '700', color: '#000000' },
+                '.eng-day-year': { left: '140px', top: '915px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                '#previewEngMonth': { left: '170px', top: '1035px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                '#previewEngDate': { left: '170px', top: '1135px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                '.mal-day-year': { left: '580px', top: '915px', fontSize: '45px', fontWeight: '800', color: '#000000' },
+                '#previewMalMonth': { left: '610px', top: '1035px', fontSize: '35px', fontWeight: '700', color: '#ffffff' },
+                '#previewMalDate': { left: '610px', top: '1135px', fontSize: '130px', fontWeight: '700', color: '#000000' },
+                '#previewHijriYear': { left: '380px', top: '1385px', fontSize: '35px', fontWeight: '700', color: '#000000' },
                 '#previewHijriMonth': { left: '380px', top: '1475px', fontSize: '30px', fontWeight: '800', color: '#ffffff' },
-                '#previewHijriDate': { left: '380px', top: '1565px', fontSize: '130px', fontWeight: '700', color: '#000000' }
+                '#previewHijriDate': { left: '380px', top: '1570px', fontSize: '130px', fontWeight: '700', color: '#000000' }
             };
             if (typeof applyDailyPosterLayout === 'function') applyDailyPosterLayout(PERFECT_LAYOUT);
             localStorage.setItem('dailyPosterLayout', JSON.stringify(PERFECT_LAYOUT));

@@ -475,93 +475,138 @@ app.post('/api/upload-daily-template', (req, res) => {
     }
 });
 
+// API: Manually trigger automatic news check now
+app.post('/api/check-news', async (req, res) => {
+    try {
+        const result = await checkNews({ forceImmediate: true });
+        res.json({ success: true, message: result.message || 'News check triggered successfully!' });
+    } catch (err) {
+        console.error('Error triggering checkNews manually:', err);
+        res.status(500).json({ error: 'Failed to run news check.' });
+    }
+});
+
 // Function to check website for breaking news automatically
-async function checkNews() {
-    db.all('SELECT * FROM settings', [], async (err, rows) => {
-        if (err) return console.error('Error fetching settings:', err);
+async function checkNews(options = {}) {
+    const { forceImmediate = false } = options;
+    return new Promise((resolve) => {
+        db.all('SELECT * FROM settings', [], async (err, rows) => {
+            if (err) {
+                console.error('Error fetching settings:', err);
+                return resolve({ success: false, message: 'Failed to fetch settings' });
+            }
 
-        const settings = {};
-        rows.forEach(r => settings[r.key] = r.value);
+            const settings = {};
+            rows.forEach(r => settings[r.key] = r.value);
 
-        let activeSources = [];
-        try { activeSources = JSON.parse(settings.active_sources); } catch (e) { }
+            let activeSources = [];
+            try { activeSources = JSON.parse(settings.active_sources); } catch (e) { }
 
-        if (activeSources.includes('reporterlive')) {
+            if (!activeSources.includes('reporterlive')) {
+                console.log('ReporterLive is not in active_sources setting.');
+                return resolve({ success: true, message: 'ReporterLive source is currently disabled in settings.' });
+            }
+
             console.log('Checking for new breaking news from ReporterLive...');
+            if (!client.isClientReady) {
+                console.log('WhatsApp client is not ready yet. Skipping news broadcast until connected.');
+                return resolve({ success: false, message: 'WhatsApp client is not ready yet.' });
+            }
+
             try {
                 const response = await axios.get(NEWS_URL);
                 const $ = cheerio.load(response.data);
 
                 const firstNewsBox = $('.smallNewsBox').first();
-                if (firstNewsBox.length > 0) {
-                    const link = firstNewsBox.attr('href');
-                    const title = firstNewsBox.find('.newsHeading p').text().trim();
-                    const category = firstNewsBox.find('.head').text().trim();
+                if (firstNewsBox.length === 0) {
+                    console.log('No news boxes found on ReporterLive homepage.');
+                    return resolve({ success: true, message: 'No news boxes found on website.' });
+                }
 
-                    if (link && title) {
-                        db.get('SELECT id FROM news_history WHERE url = ?', [link], async (err, row) => {
-                            if (err) return console.error('Database error:', err);
-                            if (!row) {
-                                console.log('New Malayalam article found:', title);
+                const rawLink = firstNewsBox.attr('href');
+                const title = firstNewsBox.find('.newsHeading p').text().trim();
+                if (!rawLink || !title) {
+                    return resolve({ success: true, message: 'No headline found.' });
+                }
+
+                const link = rawLink.startsWith('http') ? rawLink : 'https://www.reporterlive.com' + rawLink;
+
+                db.get('SELECT id FROM news_history WHERE url = ?', [link], async (err, row) => {
+                    if (err) {
+                        console.error('Database error checking history:', err);
+                        return resolve({ success: false, message: 'Database error' });
+                    }
+
+                    if (row && !forceImmediate) {
+                        console.log('No new breaking news (already sent):', title);
+                        return resolve({ success: true, message: 'No new breaking news (already sent).' });
+                    }
+
+                    console.log('New Malayalam article found:', title);
+
+                    try {
+                        const articleRes = await axios.get(link);
+                        const $a = cheerio.load(articleRes.data);
+                        const imageUrl = $a('meta[property="og:image"]').attr('content');
+                        const description = extractDetailedNews($a);
+
+                        let media = null;
+                        if (imageUrl && settings.send_images === 'true') {
+                            try {
+                                media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                            } catch (imgErr) {
+                                console.warn('Could not load article image for WhatsApp, sending text only:', imgErr.message);
+                            }
+                        }
+
+                        db.all('SELECT group_id, name, brand FROM groups', [], async (err, groups) => {
+                            if (err || !groups || groups.length === 0) {
+                                console.log('No registered WhatsApp groups found.');
+                                return resolve({ success: true, message: 'No registered groups to send news to.' });
+                            }
+
+                            console.log(`Sending news to ${groups.length} registered group(s)...`);
+                            let sentAnyCount = 0;
+
+                            for (let i = 0; i < groups.length; i++) {
+                                const group = groups[i];
+                                const msgText = (group.brand === 'parappanagadi') 
+                                    ? formatParappanagadiMessage(title, description)
+                                    : formatNewsMessage(title, description);
+
+                                if (i > 0) {
+                                    const delayMs = forceImmediate ? 500 : (2000 + Math.floor(Math.random() * 1500));
+                                    await new Promise(r => setTimeout(r, delayMs));
+                                }
 
                                 try {
-                                    const articleRes = await axios.get(link);
-                                    const $a = cheerio.load(articleRes.data);
-                                    const imageUrl = $a('meta[property="og:image"]').attr('content');
-                                    const description = extractDetailedNews($a);
-
-                                    let media = null;
-                                    if (imageUrl && settings.send_images === 'true') {
-                                        media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                                    if (media) {
+                                        await client.sendMessage(group.group_id, media, { caption: msgText });
+                                    } else {
+                                        await client.sendMessage(group.group_id, msgText);
                                     }
-
-                                    db.all('SELECT group_id, name, brand FROM groups', [], async (err, groups) => {
-                                        if (err) return console.error('Error fetching registered groups:', err);
-
-                                        const sendPromises = groups.map(group => {
-                                            return new Promise(resolve => {
-                                                // Random delay between 1 second and 30 minutes (1800000 ms)
-                                                const delayMs = Math.floor(Math.random() * 1800000) + 1000;
-                                                const delayMins = Math.round(delayMs / 60000);
-                                                
-                                                console.log(`[Stagger] Queued news for ${group.name}, will send in ~${delayMins} min(s).`);
-                                                
-                                                setTimeout(async () => {
-                                                    try {
-                                                        const msg = (group.brand === 'parappanagadi') 
-                                                            ? formatParappanagadiMessage(title, description)
-                                                            : formatNewsMessage(title, description);
-        
-                                                        if (media) {
-                                                            await client.sendMessage(group.group_id, media, { caption: msg });
-                                                        } else {
-                                                            await client.sendMessage(group.group_id, msg);
-                                                        }
-                                                        console.log(`[Stagger] Successfully sent delayed news to ${group.name}.`);
-                                                    } catch (e) {
-                                                        console.error(`[Stagger] Failed to send to group ${group.name}:`, e.message);
-                                                    }
-                                                    resolve();
-                                                }, delayMs);
-                                            });
-                                        });
-
-                                        db.run('INSERT INTO news_history (title, url) VALUES (?, ?)', [title, link]);
-                                        console.log(`News staggered and queued for ${groups.length} registered groups.`);
-                                    });
+                                    console.log(`[News Broadcast] Successfully sent news to ${group.name}.`);
+                                    sentAnyCount++;
                                 } catch (e) {
-                                    console.error('Error during broadcast:', e);
+                                    console.error(`[News Broadcast] Failed to send to group ${group.name}:`, e.message);
                                 }
-                            } else {
-                                console.log('No new breaking news (already sent).');
                             }
+
+                            if (!row && sentAnyCount > 0) {
+                                db.run('INSERT INTO news_history (title, url) VALUES (?, ?)', [title, link]);
+                            }
+                            resolve({ success: true, message: `News found: "${title}". Broadcast queued for ${groups.length} group(s).` });
                         });
+                    } catch (e) {
+                        console.error('Error fetching article detail or broadcasting:', e);
+                        resolve({ success: false, message: 'Error processing news article.' });
                     }
-                }
+                });
             } catch (err) {
                 console.error('Error scraping website:', err.message);
+                resolve({ success: false, message: 'Error fetching website: ' + err.message });
             }
-        }
+        });
     });
 }
 
@@ -570,6 +615,12 @@ let currentCronTask = null;
 db.get('SELECT value FROM settings WHERE key = "check_interval"', (err, row) => {
     const interval = row ? row.value : '30';
     currentCronTask = cron.schedule(`*/${interval} * * * *`, checkNews);
+});
+
+// Run check when WhatsApp becomes ready
+client.on('ready', () => {
+    console.log('Running breaking news check now that WhatsApp is ready...');
+    checkNews().catch(() => {});
 });
 
 app.listen(PORT, () => {
