@@ -1,3 +1,12 @@
+// Process safety handlers to prevent app crash on network disconnection or socket error
+process.on('uncaughtException', (err) => {
+    console.error('🛡️ [Safety Guard] Uncaught Exception intercepted (process kept running):', err.message || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🛡️ [Safety Guard] Unhandled Promise Rejection intercepted (process kept running):', reason.message || reason);
+});
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -20,8 +29,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Reporter Live URL
 const NEWS_URL = 'https://www.reporterlive.com/';
 
-// Initialize WhatsApp Client (This will log a QR code if not already authenticated)
-client.initialize();
+// Initialize WhatsApp Client safely with auto-reconnect
+client.safeInitialize();
 
 // API: Get registered groups from database
 app.get('/api/groups', (req, res) => {
@@ -226,7 +235,12 @@ _  നിങ്ങള്ക്കും ഗ്രൂപ്പിലൂടെ വ
 // Helper to send latest news to a specific group
 async function sendLatestNewsToGroup(groupId, brand, originalMsg) {
     try {
-        originalMsg.reply('🔄 Fetching the latest news for this newly registered group, please wait...');
+        const isOnline = await client.checkInternet();
+        if (!isOnline) {
+            originalMsg.reply('⚠️ Internet connection is currently offline. Will try again once internet returns.').catch(() => {});
+            return;
+        }
+        originalMsg.reply('🔄 Fetching the latest news for this newly registered group, please wait...').catch(() => {});
         const response = await axios.get(NEWS_URL);
         const $ = cheerio.load(response.data);
         const firstNewsBox = $('.smallNewsBox').first();
@@ -242,7 +256,11 @@ async function sendLatestNewsToGroup(groupId, brand, originalMsg) {
 
             let media = null;
             if (imageUrl) {
-                media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                try {
+                    media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                } catch (imgErr) {
+                    console.warn('Could not load article image:', imgErr.message);
+                }
             }
             
             const msgText = brand === 'parappanagadi' 
@@ -255,126 +273,143 @@ async function sendLatestNewsToGroup(groupId, brand, originalMsg) {
                 await client.sendMessage(groupId, msgText);
             }
         } else {
-            originalMsg.reply('⚠️ Could not find any news right now.');
+            originalMsg.reply('⚠️ Could not find any news right now.').catch(() => {});
         }
     } catch (err) {
         console.error('Error fetching latest news on register:', err.message);
-        originalMsg.reply('❌ Failed to fetch news.');
+        originalMsg.reply('❌ Failed to fetch news.').catch(() => {});
     }
 }
 
 // WhatsApp Message Listener for Group Registration
 client.on('message_create', async msg => {
-    const msgParts = msg.body.trim().split(' ');
-    const command = msgParts[0].toLowerCase();
+    try {
+        const msgParts = (msg.body || '').trim().split(' ');
+        const command = msgParts[0].toLowerCase();
 
-    if (command === '!register' || command === '!unregister') {
-        // Since getChat() crashes due to WA Web updates, we detect groups via the ID directly.
-        // Group IDs in WhatsApp end with '@g.us'.
-        const targetId = msg.to.endsWith('@g.us') ? msg.to : (msg.from.endsWith('@g.us') ? msg.from : null);
+        if (command === '!register' || command === '!unregister') {
+            // Group IDs in WhatsApp end with '@g.us'.
+            const targetId = msg.to.endsWith('@g.us') ? msg.to : (msg.from.endsWith('@g.us') ? msg.from : null);
 
-        if (targetId) {
-            if (command === '!register') {
-                const brand = msgParts[1]?.toLowerCase() === 'parappanagadi' ? 'parappanagadi' : 'mattannur';
-                db.get('SELECT id FROM groups WHERE group_id = ?', [targetId], (err, row) => {
-                    if (!row) {
-                        db.run('INSERT INTO groups (group_id, name, brand) VALUES (?, ?, ?)', [targetId, 'Registered Group (' + targetId.split('@')[0].slice(-4) + ')', brand], () => {
-                            msg.reply(`✅ This group has been registered for breaking news alerts (${brand === 'parappanagadi' ? 'Parappanagadi Times' : 'Mattannur Vision'})!`);
-                            sendLatestNewsToGroup(targetId, brand, msg);
-                        });
-                    } else {
-                        msg.reply('⚠️ This group is already registered.');
+            if (targetId) {
+                if (command === '!register') {
+                    const brand = msgParts[1]?.toLowerCase() === 'parappanagadi' ? 'parappanagadi' : 'mattannur';
+                    db.get('SELECT id FROM groups WHERE group_id = ?', [targetId], (err, row) => {
+                        if (!row) {
+                            db.run('INSERT INTO groups (group_id, name, brand) VALUES (?, ?, ?)', [targetId, 'Registered Group (' + targetId.split('@')[0].slice(-4) + ')', brand], () => {
+                                msg.reply(`✅ This group has been registered for breaking news alerts (${brand === 'parappanagadi' ? 'Parappanagadi Times' : 'Mattannur Vision'})!`).catch(() => {});
+                                sendLatestNewsToGroup(targetId, brand, msg);
+                            });
+                        } else {
+                            msg.reply('⚠️ This group is already registered.').catch(() => {});
+                        }
+                    });
+                } else if (command === '!unregister') {
+                    db.run('DELETE FROM groups WHERE group_id = ?', [targetId], () => {
+                        msg.reply('❌ This group has been removed from breaking news alerts.').catch(() => {});
+                    });
+                }
+            } else {
+                msg.reply('This command only works in groups.').catch(() => {});
+            }
+        } else if (msg.body === '!help') {
+            const helpText = `🤖 *News Bot Commands*\n\n` +
+                `*!register* - Enable breaking news for this group (Mattannur Vision).\n` +
+                `*!register parappanagadi* - Enable breaking news (Parappanagadi Times).\n` +
+                `*!unregister* - Disable breaking news for this group.\n` +
+                `*!news* - Fetch latest news (Mattannur Vision).\n` +
+                `*!newsparappanagadi* - Fetch latest news (Parappanagadi Times).\n` +
+                `*!status* - Check if the bot is online.`;
+            msg.reply(helpText).catch(() => {});
+        } else if (msg.body === '!status') {
+            msg.reply('✅ *Bot Status: ONLINE*\nMonitoring ReporterLive for breaking news every 30 minutes.').catch(() => {});
+        } else if (msg.body === '!news') {
+            try {
+                const isOnline = await client.checkInternet();
+                if (!isOnline) {
+                    return msg.reply('⚠️ Internet connection is currently offline. Please try again later.').catch(() => {});
+                }
+                msg.reply('🔄 Fetching the latest news, please wait...').catch(() => {});
+                const response = await axios.get(NEWS_URL);
+                const $ = cheerio.load(response.data);
+                const firstNewsBox = $('.smallNewsBox').first();
+
+                if (firstNewsBox.length > 0) {
+                    const link = firstNewsBox.attr('href');
+                    const title = firstNewsBox.find('.newsHeading p').text().trim();
+
+                    const articleRes = await axios.get(link);
+                    const $a = cheerio.load(articleRes.data);
+                    const imageUrl = $a('meta[property="og:image"]').attr('content');
+                    const description = extractDetailedNews($a);
+
+                    let media = null;
+                    if (imageUrl) {
+                        try {
+                            media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                        } catch (imgErr) {
+                            console.warn('Could not load article image:', imgErr.message);
+                        }
                     }
-                });
-            } else if (command === '!unregister') {
-                db.run('DELETE FROM groups WHERE group_id = ?', [targetId], () => {
-                    msg.reply('❌ This group has been removed from breaking news alerts.');
-                });
-            }
-        } else {
-            msg.reply('This command only works in groups.');
-        }
-    } else if (msg.body === '!help') {
-        const helpText = `🤖 *News Bot Commands*\n\n` +
-            `*!register* - Enable breaking news for this group (Mattannur Vision).\n` +
-            `*!register parappanagadi* - Enable breaking news (Parappanagadi Times).\n` +
-            `*!unregister* - Disable breaking news for this group.\n` +
-            `*!news* - Fetch latest news (Mattannur Vision).\n` +
-            `*!newsparappanagadi* - Fetch latest news (Parappanagadi Times).\n` +
-            `*!status* - Check if the bot is online.`;
-        msg.reply(helpText);
-    } else if (msg.body === '!status') {
-        msg.reply('✅ *Bot Status: ONLINE*\nMonitoring ReporterLive for breaking news every 30 minutes.');
-    } else if (msg.body === '!news') {
-        try {
-            msg.reply('🔄 Fetching the latest news, please wait...');
-            const response = await axios.get(NEWS_URL);
-            const $ = cheerio.load(response.data);
-            const firstNewsBox = $('.smallNewsBox').first();
+                    const msgText = formatNewsMessage(title, description);
 
-            if (firstNewsBox.length > 0) {
-                const link = firstNewsBox.attr('href');
-                const title = firstNewsBox.find('.newsHeading p').text().trim();
-                const category = firstNewsBox.find('.head').text().trim();
-
-                const articleRes = await axios.get(link);
-                const $a = cheerio.load(articleRes.data);
-                const imageUrl = $a('meta[property="og:image"]').attr('content');
-                const description = extractDetailedNews($a);
-
-                let media = null;
-                if (imageUrl) {
-                    media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
-                }
-                const msgText = formatNewsMessage(title, description);
-
-                if (media) {
-                    await msg.reply(media, undefined, { caption: msgText });
+                    if (media) {
+                        await msg.reply(media, undefined, { caption: msgText });
+                    } else {
+                        await msg.reply(msgText);
+                    }
                 } else {
-                    await msg.reply(msgText);
+                    msg.reply('⚠️ Could not find any news right now.').catch(() => {});
                 }
-            } else {
-                msg.reply('⚠️ Could not find any news right now.');
+            } catch (err) {
+                console.error('Error fetching !news:', err.message);
+                msg.reply('❌ Failed to fetch news.').catch(() => {});
             }
-        } catch (err) {
-            console.error('Error fetching !news:', err.message);
-            msg.reply('❌ Failed to fetch news.');
-        }
-    } else if (msg.body === '!newsparappanagadi') {
-        try {
-            msg.reply('🔄 Fetching the latest news, please wait...');
-            const response = await axios.get(NEWS_URL);
-            const $ = cheerio.load(response.data);
-            const firstNewsBox = $('.smallNewsBox').first();
-
-            if (firstNewsBox.length > 0) {
-                const link = firstNewsBox.attr('href');
-                const title = firstNewsBox.find('.newsHeading p').text().trim();
-                const category = firstNewsBox.find('.head').text().trim();
-
-                const articleRes = await axios.get(link);
-                const $a = cheerio.load(articleRes.data);
-                const imageUrl = $a('meta[property="og:image"]').attr('content');
-                const description = extractDetailedNews($a);
-
-                let media = null;
-                if (imageUrl) {
-                    media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+        } else if (msg.body === '!newsparappanagadi') {
+            try {
+                const isOnline = await client.checkInternet();
+                if (!isOnline) {
+                    return msg.reply('⚠️ Internet connection is currently offline. Please try again later.').catch(() => {});
                 }
-                const msgText = formatParappanagadiMessage(title, description);
+                msg.reply('🔄 Fetching the latest news, please wait...').catch(() => {});
+                const response = await axios.get(NEWS_URL);
+                const $ = cheerio.load(response.data);
+                const firstNewsBox = $('.smallNewsBox').first();
 
-                if (media) {
-                    await msg.reply(media, undefined, { caption: msgText });
+                if (firstNewsBox.length > 0) {
+                    const link = firstNewsBox.attr('href');
+                    const title = firstNewsBox.find('.newsHeading p').text().trim();
+
+                    const articleRes = await axios.get(link);
+                    const $a = cheerio.load(articleRes.data);
+                    const imageUrl = $a('meta[property="og:image"]').attr('content');
+                    const description = extractDetailedNews($a);
+
+                    let media = null;
+                    if (imageUrl) {
+                        try {
+                            media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+                        } catch (imgErr) {
+                            console.warn('Could not load article image:', imgErr.message);
+                        }
+                    }
+                    const msgText = formatParappanagadiMessage(title, description);
+
+                    if (media) {
+                        await msg.reply(media, undefined, { caption: msgText });
+                    } else {
+                        await msg.reply(msgText);
+                    }
                 } else {
-                    await msg.reply(msgText);
+                    msg.reply('⚠️ Could not find any news right now.').catch(() => {});
                 }
-            } else {
-                msg.reply('⚠️ Could not find any news right now.');
+            } catch (err) {
+                console.error('Error fetching !newsparappanagadi:', err.message);
+                msg.reply('❌ Failed to fetch news.').catch(() => {});
             }
-        } catch (err) {
-            console.error('Error fetching !newsparappanagadi:', err.message);
-            msg.reply('❌ Failed to fetch news.');
         }
+    } catch (handlerErr) {
+        console.error('Error handling WhatsApp event:', handlerErr.message || handlerErr);
     }
 });
 
@@ -489,7 +524,13 @@ app.post('/api/check-news', async (req, res) => {
 // Function to check website for breaking news automatically
 async function checkNews(options = {}) {
     const { forceImmediate = false } = options;
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+        const isOnline = await client.checkInternet();
+        if (!isOnline) {
+            console.log('🌐 [News Check] Internet is offline. Skipping check until internet connection is restored.');
+            return resolve({ success: false, message: 'Internet connection is offline.' });
+        }
+
         db.all('SELECT * FROM settings', [], async (err, rows) => {
             if (err) {
                 console.error('Error fetching settings:', err);
