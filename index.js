@@ -26,11 +26,48 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/qr', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'qr.html'));
+});
+
 // Reporter Live URL
 const NEWS_URL = 'https://www.reporterlive.com/';
 
 // Initialize WhatsApp Client safely with auto-reconnect
 client.safeInitialize();
+
+// API: Get WhatsApp Connection Status
+app.get('/api/whatsapp/status', (req, res) => {
+    res.json({
+        ready: client.isClientReady || false,
+        status: client.currentStatus || (client.isClientReady ? 'READY' : 'DISCONNECTED'),
+        qrDataUrl: client.latestQrDataUrl || null,
+        pairingCode: client.latestPairingCode || null
+    });
+});
+
+// API: Request Pairing Code (Alternative to QR Code)
+app.post('/api/whatsapp/pair', async (req, res) => {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required (e.g. 919876543210)' });
+    try {
+        const code = await client.requestPairingCode(phoneNumber);
+        res.json({ success: true, code: code });
+    } catch (err) {
+        console.error('Error requesting pairing code:', err.message);
+        res.status(500).json({ error: err.message || 'Failed to request pairing code. Make sure client is in QR scan mode.' });
+    }
+});
+
+// API: Logout & Relink WhatsApp (Reset session to get new QR or pairing code)
+app.post('/api/whatsapp/logout', async (req, res) => {
+    try {
+        await client.logoutAndRestart();
+        res.json({ success: true, message: 'WhatsApp session cleared. Resetting connection scanner...' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to reset session: ' + err.message });
+    }
+});
 
 // API: Get registered groups from database
 app.get('/api/groups', (req, res) => {

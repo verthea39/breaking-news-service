@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Manager - Authentication & Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b141a;
+            --card-bg: #111b21;
+            --card-border: #222d34;
+            --primary: #25D366;
+            --primary-hover: #1eaa53;
+            --text: #e9edef;
+            --text-muted: #8696a0;
+            --danger: #ea4335;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            padding: 32px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .header-logo {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        p.subtitle {
+            color: var(--text-muted);
+            margin: 0 0 24px 0;
+            font-size: 14px;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .status-badge.connected {
+            background: rgba(37, 211, 102, 0.15);
+            color: #25D366;
+            border: 1px solid rgba(37, 211, 102, 0.3);
+        }
+        .status-badge.waiting {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+        .status-badge.disconnected {
+            background: rgba(234, 67, 53, 0.15);
+            color: #ea4335;
+            border: 1px solid rgba(234, 67, 53, 0.3);
+        }
+        .tab-buttons {
+            display: flex;
+            background: #202c33;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--text);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .qr-box {
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        .qr-box img {
+            width: 220px;
+            height: 220px;
+            display: block;
+        }
+        .pairing-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: #202c33;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+        button.btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        button.btn-primary:hover {
+            background: var(--primary-hover);
+        }
+        button.btn-danger {
+            background: rgba(234, 67, 53, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .code-display {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: var(--primary);
+            background: #202c33;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            border: 1px dashed var(--primary);
+        }
+        .instructions {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-top: 16px;
+        }
+        .nav-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <div class="header-logo">📱</div>
+    <h2>WhatsApp Manager</h2>
+    <p class="subtitle">Connect WhatsApp for Breaking News Automation</p>
+
+    <div id="statusBadge" class="status-badge waiting">
+        <span class="indicator">⏳</span> <span id="statusText">Checking WhatsApp connection...</span>
+    </div>
+
+    <!-- Connected View -->
+    <div id="connectedView" style="display: none;">
+        <div style="font-size: 48px; margin: 20px 0;">✅</div>
+        <h3 style="margin: 0 0 10px 0;">WhatsApp is Connected!</h3>
+        <p class="instructions">Your service is active and ready to broadcast news posters to registered groups.</p>
+        <button class="btn-danger" onclick="logoutWhatsApp()">Logout & Link Different Account</button>
+    </div>
+
+    <!-- Authentication View (QR / Pairing Code) -->
+    <div id="authView">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('qrTab')">QR Code</button>
+            <button class="tab-btn" onclick="switchTab('pairingTab')">Pairing Code (No Scan)</button>
+        </div>
+
+        <!-- Tab 1: QR Code -->
+        <div id="qrTab" class="tab-content active">
+            <div class="qr-box">
+                <img id="qrImage" src="/qr.png" alt="Scan QR Code" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23666\'>Waiting for QR...</text></svg>'">
+            </div>
+            <p class="instructions">
+                1. Open WhatsApp on your phone.<br>
+                2. Tap <b>Menu / Settings</b> &gt; <b>Linked Devices</b>.<br>
+                3. Tap <b>Link a Device</b> and scan this QR code.
+            </p>
+        </div>
+
+        <!-- Tab 2: Pairing Code -->
+        <div id="pairingTab" class="tab-content">
+            <p class="instructions" style="margin-top:0;">Enter your phone number with country code (e.g. <b>919876543210</b>) to receive an 8-digit code.</p>
+            <div class="pairing-input-group">
+                <input type="text" id="phoneInput" placeholder="e.g. 919876543210 (WhatsApp number)">
+                <button class="btn-primary" onclick="requestPairingCode()">Get Pairing Code</button>
+            </div>
+            <div id="codeDisplayBox" style="display: none;">
+                <p style="font-size: 13px; margin: 8px 0 0 0; color: var(--text-muted);">Enter this code on your phone:</p>
+                <div id="codeDisplay" class="code-display">----</div>
+                <p class="instructions">
+                    In WhatsApp: <b>Linked Devices</b> &gt; <b>Link a Device</b> &gt; <b>Link with phone number instead</b>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <a href="/admin.html" class="nav-link">← Go to Admin Dashboard</a>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        if (tabId === 'qrTab') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('qrTab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('pairingTab').classList.add('active');
+        }
+    }
+
+    async function checkStatus() {
+        try {
+            const res = await fetch('/api/whatsapp/status');
+            const data = await res.json();
+
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+
+            if (data.ready) {
+                badge.className = 'status-badge connected';
+                statusText.innerText = 'Connected & Active';
+                document.getElementById('connectedView').style.display = 'block';
+                document.getElementById('authView').style.display = 'none';
+            } else {
+                document.getElementById('connectedView').style.display = 'none';
+                document.getElementById('authView').style.display = 'block';
+
+                if (data.status === 'SCAN_QR' || data.qrDataUrl) {
+                    badge.className = 'status-badge waiting';
+                    statusText.innerText = 'Scan QR Code or Use Pairing Code';
+                    if (data.qrDataUrl) {
+                        document.getElementById('qrImage').src = data.qrDataUrl;
+                    } else {
+                        document.getElementById('qrImage').src = '/qr.png?t=' + Date.now();
+                    }
+                } else if (data.status === 'INITIALIZING') {
+                    badge.className = 'status-badge waiting';
+                    statusText.innerText = 'Initializing WhatsApp engine...';
+                } else {
+                    badge.className = 'status-badge disconnected';
+                    statusText.innerText = 'Disconnected';
+                }
+            }
+
+            if (data.pairingCode) {
+                document.getElementById('codeDisplayBox').style.display = 'block';
+                document.getElementById('codeDisplay').innerText = data.pairingCode;
+            }
+        } catch (e) {
+            console.error('Failed to fetch WhatsApp status:', e);
+        }
+    }
+
+    async function requestPairingCode() {
+        const phone = document.getElementById('phoneInput').value.trim();
+        if (!phone) return alert('Please enter your WhatsApp phone number with country code.');
+
+        try {
+            const res = await fetch('/api/whatsapp/pair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone })
+            });
+            const data = await res.json();
+            if (data.success && data.code) {
+                document.getElementById('codeDisplayBox').style.display = 'block';
+                document.getElementById('codeDisplay').innerText = data.code;
+            } else {
+                alert(data.error || 'Could not generate pairing code. Please make sure WhatsApp scanner is active.');
+            }
+        } catch (e) {
+            alert('Error requesting pairing code: ' + e.message);
+        }
+    }
+
+    async function logoutWhatsApp() {
+        if (!confirm('Are you sure you want to disconnect WhatsApp and clear the session?')) return;
+        try {
+            await fetch('/api/whatsapp/logout', { method: 'POST' });
+            alert('Session cleared. Restarting scanner...');
+            checkStatus();
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    setInterval(checkStatus, 3000);
+    checkStatus();
+</script>
+
+</body>
+</html>

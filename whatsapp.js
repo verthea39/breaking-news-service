@@ -50,6 +50,9 @@ const client = new Client({
 });
 
 client.isClientReady = false;
+client.currentStatus = 'DISCONNECTED';
+client.latestQrDataUrl = null;
+client.latestPairingCode = null;
 let isInitializing = false;
 let hasInitialized = false;
 
@@ -69,6 +72,7 @@ function checkInternet() {
 // Safe initialization wrapper to avoid unhandled rejections and puppeteer crashes
 async function safeInitialize() {
     if (client.isClientReady) {
+        client.currentStatus = 'READY';
         return;
     }
     if (isInitializing) {
@@ -82,6 +86,7 @@ async function safeInitialize() {
     }
 
     isInitializing = true;
+    client.currentStatus = 'INITIALIZING';
     console.log('🔄 Initializing WhatsApp client...');
 
     if (hasInitialized) {
@@ -99,12 +104,20 @@ async function safeInitialize() {
         console.error('⚠️ WhatsApp initialization failed:', err.message || err);
         isInitializing = false;
         hasInitialized = false;
+        client.currentStatus = 'DISCONNECTED';
     }
 }
 
 client.on('qr', (qr) => {
+    client.currentStatus = 'SCAN_QR';
     qrcode.generate(qr, { small: true });
     
+    QRCode.toDataURL(qr, (err, url) => {
+        if (!err) {
+            client.latestQrDataUrl = url;
+        }
+    });
+
     QRCode.toFile(__dirname + '/public/qr.png', qr, {
         color: {
             dark: '#000000',
@@ -119,16 +132,22 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
     client.isClientReady = true;
+    client.currentStatus = 'READY';
+    client.latestQrDataUrl = null;
     isInitializing = false;
     console.log('✅ WhatsApp Client is ready and connected!');
 });
 
 client.on('authenticated', () => {
+    client.currentStatus = 'AUTHENTICATED';
+    client.latestQrDataUrl = null;
     console.log('WhatsApp Authenticated successfully.');
 });
 
 client.on('auth_failure', msg => {
     client.isClientReady = false;
+    client.currentStatus = 'DISCONNECTED';
+    client.latestQrDataUrl = null;
     isInitializing = false;
     hasInitialized = false;
     console.error('WhatsApp Authentication failure:', msg);
@@ -138,11 +157,15 @@ client.on('change_state', state => {
     console.log('WhatsApp Connection State Changed:', state);
     if (state === 'DISCONNECTED' || state === 'UNPAIRED') {
         client.isClientReady = false;
+        client.currentStatus = 'DISCONNECTED';
+        client.latestQrDataUrl = null;
     }
 });
 
 client.on('disconnected', (reason) => {
     client.isClientReady = false;
+    client.currentStatus = 'DISCONNECTED';
+    client.latestQrDataUrl = null;
     isInitializing = false;
     hasInitialized = false;
     console.warn('⚠️ WhatsApp Client was disconnected:', reason);
@@ -155,6 +178,45 @@ client.on('disconnected', (reason) => {
         }
     }, 5000);
 });
+
+async function requestPairingCode(phoneNumber) {
+    if (!phoneNumber) throw new Error('Phone number is required');
+    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+    if (client.requestPairingCode) {
+        const code = await client.requestPairingCode(cleanPhone);
+        client.latestPairingCode = code;
+        return code;
+    } else {
+        throw new Error('Pairing code is not supported in this whatsapp-web.js version');
+    }
+}
+
+async function logoutAndRestart() {
+    client.isClientReady = false;
+    client.currentStatus = 'DISCONNECTED';
+    client.latestQrDataUrl = null;
+    isInitializing = false;
+    hasInitialized = false;
+
+    try {
+        await client.logout().catch(() => {});
+        await client.destroy().catch(() => {});
+    } catch (e) {}
+
+    const sessionDir = authDataPath || path.resolve(__dirname, '.wwebjs_auth');
+    if (fs.existsSync(sessionDir)) {
+        try {
+            fs.rmSync(sessionDir, { recursive: true, force: true });
+            console.log('🗑️ WhatsApp auth session folder deleted.');
+        } catch (e) {
+            console.error('Error deleting session folder:', e.message);
+        }
+    }
+
+    setTimeout(() => {
+        safeInitialize();
+    }, 1000);
+}
 
 // Periodic Internet Monitor & Auto-Reconnect Loop
 let wasOffline = false;
@@ -182,5 +244,7 @@ setInterval(async () => {
 client.safeInitialize = safeInitialize;
 client.checkInternet = checkInternet;
 client.getBrowserExecutablePath = getBrowserExecutablePath;
+client.requestPairingCode = requestPairingCode;
+client.logoutAndRestart = logoutAndRestart;
 
 module.exports = client;
