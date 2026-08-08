@@ -44,7 +44,17 @@ const client = new Client({
     authStrategy: new LocalAuth({ dataPath: authDataPath }),
     authTimeoutMs: 0,
     puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--single-process'
+        ],
         executablePath: executablePath
     }
 });
@@ -67,6 +77,30 @@ function checkInternet() {
             }
         });
     });
+}
+
+// Clean stale Chromium lock files if process crashed or was closed abruptly
+function cleanStaleLocks() {
+    const sessionDir = authDataPath || path.resolve(__dirname, '.wwebjs_auth');
+    if (!fs.existsSync(sessionDir)) return;
+
+    try {
+        const findAndRemoveLocks = (dir) => {
+            const files = fs.readdirSync(dir, { withFileTypes: true });
+            for (const file of files) {
+                const fullPath = path.join(dir, file.name);
+                if (file.isDirectory()) {
+                    findAndRemoveLocks(fullPath);
+                } else if (['SingletonLock', 'LOCK', 'SingletonCookie', 'SingletonSocket'].includes(file.name)) {
+                    try {
+                        fs.unlinkSync(fullPath);
+                        console.log(`🧹 Cleaned up stale Chromium lock file: ${fullPath}`);
+                    } catch (e) {}
+                }
+            }
+        };
+        findAndRemoveLocks(sessionDir);
+    } catch (e) {}
 }
 
 // Safe initialization wrapper to avoid unhandled rejections and puppeteer crashes
@@ -97,6 +131,9 @@ async function safeInitialize() {
         }
     }
 
+    // Clean any orphaned lock files from prior crashes/abrupt closes
+    cleanStaleLocks();
+
     try {
         hasInitialized = true;
         await client.initialize();
@@ -110,7 +147,11 @@ async function safeInitialize() {
 
 client.on('qr', (qr) => {
     client.currentStatus = 'SCAN_QR';
-    qrcode.generate(qr, { small: true });
+    try {
+        qrcode.generate(qr, { small: true });
+    } catch (e) {
+        // Ignore terminal formatting errors in non-TTY background environment
+    }
     
     QRCode.toDataURL(qr, (err, url) => {
         if (!err) {
@@ -159,6 +200,8 @@ client.on('change_state', state => {
         client.isClientReady = false;
         client.currentStatus = 'DISCONNECTED';
         client.latestQrDataUrl = null;
+        isInitializing = false;
+        hasInitialized = false;
     }
 });
 
@@ -179,16 +222,37 @@ client.on('disconnected', (reason) => {
     }, 5000);
 });
 
-async function requestPairingCode(phoneNumber) {
+async function generatePairingCode(phoneNumber) {
     if (!phoneNumber) throw new Error('Phone number is required');
+    if (client.isClientReady) {
+        throw new Error('WhatsApp is already connected! Click "Logout & Link Different Account" if you want to pair a new phone.');
+    }
     const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
-    if (client.requestPairingCode) {
-        const code = await client.requestPairingCode(cleanPhone);
+    
+    // Check if whatsapp-web.js Client prototype has native requestPairingCode
+    if (typeof Client.prototype.requestPairingCode === 'function') {
+        const code = await Client.prototype.requestPairingCode.call(client, cleanPhone);
         client.latestPairingCode = code;
         return code;
-    } else {
-        throw new Error('Pairing code is not supported in this whatsapp-web.js version');
     }
+    
+    // Fallback: evaluate on Puppeteer page if available
+    if (client.pupPage) {
+        try {
+            const code = await client.pupPage.evaluate(async (phone) => {
+                if (window.WWebJS && typeof window.WWebJS.requestPairingCode === 'function') {
+                    return await window.WWebJS.requestPairingCode(phone);
+                }
+                throw new Error('Pairing code function not available on WhatsApp Web page');
+            }, cleanPhone);
+            client.latestPairingCode = code;
+            return code;
+        } catch (err) {
+            throw new Error('Failed to request pairing code on WhatsApp page: ' + err.message);
+        }
+    }
+
+    throw new Error('WhatsApp scanner is not active yet. Please wait a moment and try again.');
 }
 
 async function logoutAndRestart() {
@@ -234,17 +298,31 @@ setInterval(async () => {
             wasOffline = false;
         }
         // Auto reconnect WhatsApp if offline/disconnected and not initializing
-        if (!client.isClientReady && !isInitializing && !hasInitialized) {
+        if (!client.isClientReady && !isInitializing) {
             console.log('🔄 Internet is active, but WhatsApp is disconnected. Attempting auto-reconnect...');
             safeInitialize();
         }
     }
 }, 15000); // Check every 15 seconds
 
+// Graceful process shutdown handler to destroy Puppeteer cleanly and release file locks
+async function gracefulShutdown(signal) {
+    console.log(`\n🛑 Received ${signal}. Shutting down WhatsApp client and cleaning up Chromium resources...`);
+    try {
+        if (client) {
+            await client.destroy().catch(() => {});
+        }
+    } catch (e) {}
+    process.exit(0);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
 client.safeInitialize = safeInitialize;
 client.checkInternet = checkInternet;
 client.getBrowserExecutablePath = getBrowserExecutablePath;
-client.requestPairingCode = requestPairingCode;
+client.generatePairingCode = generatePairingCode;
 client.logoutAndRestart = logoutAndRestart;
 
 module.exports = client;

@@ -4,6 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "start:bg": "npx pm2 start ecosystem.config.js",
+    "stop:bg": "npx pm2 stop breaking-news-service",
+    "restart:bg": "npx pm2 restart breaking-news-service",
+    "status": "npx pm2 status",
+    "logs": "npx pm2 logs breaking-news-service",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
