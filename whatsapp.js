@@ -142,6 +142,10 @@ async function safeInitialize() {
         isInitializing = false;
         hasInitialized = false;
         client.currentStatus = 'DISCONNECTED';
+        if (err.message && (err.message.includes('main frame') || err.message.includes('Target closed') || err.message.includes('Execution context'))) {
+            console.log('⏳ Retrying WhatsApp initialization in 5 seconds...');
+            setTimeout(() => { safeInitialize(); }, 5000);
+        }
     }
 }
 
