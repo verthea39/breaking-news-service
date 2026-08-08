@@ -177,13 +177,16 @@ async function generatePoster(title, category, imageUrl, brandName, dateString) 
     `;
 
     try {
+        const { getBrowserExecutablePath } = require('./whatsapp');
+        const executablePath = getBrowserExecutablePath();
+
         const imageBuffer = await nodeHtmlToImage({
             html: html,
             type: 'jpeg',
             quality: 90,
             puppeteerArgs: {
-                executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                executablePath: executablePath || undefined,
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
             }
         });
         

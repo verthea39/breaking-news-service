@@ -179,22 +179,8 @@ async function generateDailyPoster(data) {
     </html>
     `;
 
-    let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '';
-    if (!executablePath) {
-        const candidatePaths = [
-            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-            '/usr/bin/chromium',
-            '/usr/bin/chromium-browser',
-            '/usr/bin/google-chrome-stable'
-        ];
-        for (const p of candidatePaths) {
-            if (fs.existsSync(p)) {
-                executablePath = p;
-                break;
-            }
-        }
-    }
+    const { getBrowserExecutablePath } = require('./whatsapp');
+    const executablePath = getBrowserExecutablePath();
 
     try {
         const imageBuffer = await nodeHtmlToImage({

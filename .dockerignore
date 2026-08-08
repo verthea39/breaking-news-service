@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.wwebjs_auth
+.wwebjs_cache
+news.db
+*.jpg
+.git
+.dockerignore
+.vercel

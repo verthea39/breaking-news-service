@@ -4,35 +4,54 @@ const QRCode = require('qrcode');
 const fs = require('fs');
 const dns = require('dns');
 
-// Try to find a browser installation across OS environments
-let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '';
-if (!executablePath) {
+// Dynamically find a valid Chromium/Chrome/Edge executable across OS environments
+function getBrowserExecutablePath() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+    const localAppData = process.env.LOCALAPPDATA || '';
     const candidatePaths = [
         'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        localAppData ? `${localAppData}\\Google\\Chrome\\Application\\chrome.exe` : '',
         'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
         '/usr/bin/chromium',
         '/usr/bin/chromium-browser',
         '/usr/bin/google-chrome-stable'
-    ];
+    ].filter(Boolean);
+
     for (const p of candidatePaths) {
         if (fs.existsSync(p)) {
-            executablePath = p;
-            break;
+            return p;
         }
     }
+    return undefined;
 }
 
+const executablePath = getBrowserExecutablePath();
+if (executablePath) {
+    console.log(`🌐 Using browser executable: ${executablePath}`);
+} else {
+    console.log('🌐 No custom browser path found, using Puppeteer default.');
+}
+
+const path = require('path');
+
+const authDataPath = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR, '.wwebjs_auth') : undefined;
+
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({ dataPath: authDataPath }),
     authTimeoutMs: 0,
     puppeteer: {
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        executablePath: executablePath || undefined
+        executablePath: executablePath
     }
 });
 
 client.isClientReady = false;
 let isInitializing = false;
+let hasInitialized = false;
 
 // Check internet connectivity helper
 function checkInternet() {
@@ -49,8 +68,11 @@ function checkInternet() {
 
 // Safe initialization wrapper to avoid unhandled rejections and puppeteer crashes
 async function safeInitialize() {
+    if (client.isClientReady) {
+        return;
+    }
     if (isInitializing) {
-        console.log('⏳ Re-initialization already in progress, skipping...');
+        console.log('⏳ Initialization or QR authentication in progress...');
         return;
     }
     const online = await checkInternet();
@@ -60,21 +82,23 @@ async function safeInitialize() {
     }
 
     isInitializing = true;
-    client.isClientReady = false;
     console.log('🔄 Initializing WhatsApp client...');
 
-    try {
-        await client.destroy().catch(() => {});
-    } catch (e) {
-        // ignore destroy errors
+    if (hasInitialized) {
+        try {
+            await client.destroy().catch(() => {});
+        } catch (e) {
+            // ignore destroy errors
+        }
     }
 
     try {
+        hasInitialized = true;
         await client.initialize();
     } catch (err) {
-        console.error('⚠️ WhatsApp initialization failed (will retry automatically):', err.message || err);
-    } finally {
+        console.error('⚠️ WhatsApp initialization failed:', err.message || err);
         isInitializing = false;
+        hasInitialized = false;
     }
 }
 
@@ -95,6 +119,7 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
     client.isClientReady = true;
+    isInitializing = false;
     console.log('✅ WhatsApp Client is ready and connected!');
 });
 
@@ -104,6 +129,8 @@ client.on('authenticated', () => {
 
 client.on('auth_failure', msg => {
     client.isClientReady = false;
+    isInitializing = false;
+    hasInitialized = false;
     console.error('WhatsApp Authentication failure:', msg);
 });
 
@@ -116,6 +143,8 @@ client.on('change_state', state => {
 
 client.on('disconnected', (reason) => {
     client.isClientReady = false;
+    isInitializing = false;
+    hasInitialized = false;
     console.warn('⚠️ WhatsApp Client was disconnected:', reason);
     console.log('⏳ Will attempt auto-reconnection as soon as internet connection is available...');
     
@@ -142,8 +171,8 @@ setInterval(async () => {
             console.log('🌐 Internet connection restored! Resuming operations...');
             wasOffline = false;
         }
-        // Auto reconnect WhatsApp if offline/disconnected
-        if (!client.isClientReady && !isInitializing) {
+        // Auto reconnect WhatsApp if offline/disconnected and not initializing
+        if (!client.isClientReady && !isInitializing && !hasInitialized) {
             console.log('🔄 Internet is active, but WhatsApp is disconnected. Attempting auto-reconnect...');
             safeInitialize();
         }
@@ -152,5 +181,6 @@ setInterval(async () => {
 
 client.safeInitialize = safeInitialize;
 client.checkInternet = checkInternet;
+client.getBrowserExecutablePath = getBrowserExecutablePath;
 
 module.exports = client;
