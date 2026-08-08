@@ -79,7 +79,7 @@ function checkInternet() {
     });
 }
 
-// Clean stale Chromium lock files if process crashed or was closed abruptly
+// Clean stale Chromium process lock files if process crashed or was closed abruptly
 function cleanStaleLocks() {
     const sessionDir = authDataPath || path.resolve(__dirname, '.wwebjs_auth');
     if (!fs.existsSync(sessionDir)) return;
@@ -91,10 +91,10 @@ function cleanStaleLocks() {
                 const fullPath = path.join(dir, file.name);
                 if (file.isDirectory()) {
                     findAndRemoveLocks(fullPath);
-                } else if (['SingletonLock', 'LOCK', 'SingletonCookie', 'SingletonSocket'].includes(file.name)) {
+                } else if (['SingletonLock', 'SingletonCookie', 'SingletonSocket'].includes(file.name)) {
                     try {
                         fs.unlinkSync(fullPath);
-                        console.log(`🧹 Cleaned up stale Chromium lock file: ${fullPath}`);
+                        console.log(`🧹 Cleaned up stale Chromium process lock file: ${fullPath}`);
                     } catch (e) {}
                 }
             }
