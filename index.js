@@ -57,6 +57,7 @@ const { generateDailyPoster } = require('./dailyPoster');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -191,7 +192,7 @@ app.get('/api/settings', (req, res) => {
 
 // API: Save settings
 app.post('/api/settings', async (req, res) => {
-    const { check_interval, send_images, active_sources, daily_poster_layout } = req.body;
+    const { check_interval, send_images, active_sources, daily_poster_layout, daily_10am_enabled, daily_news_count, daily_schedule_time } = req.body;
 
     try {
         const runAsync = (sql, params) => new Promise((resolve, reject) => {
@@ -205,6 +206,9 @@ app.post('/api/settings', async (req, res) => {
         if (send_images !== undefined) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("send_images", ?)', [send_images.toString()]);
         if (active_sources) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("active_sources", ?)', [typeof active_sources === 'string' ? active_sources : JSON.stringify(active_sources)]);
         if (daily_poster_layout) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("daily_poster_layout", ?)', [typeof daily_poster_layout === 'string' ? daily_poster_layout : JSON.stringify(daily_poster_layout)]);
+        if (daily_10am_enabled !== undefined) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("daily_10am_enabled", ?)', [daily_10am_enabled.toString()]);
+        if (daily_news_count) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("daily_news_count", ?)', [daily_news_count.toString()]);
+        if (daily_schedule_time) await runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES ("daily_schedule_time", ?)', [daily_schedule_time]);
 
         // Reschedule cron if interval changed
         if (check_interval) {
@@ -666,9 +670,10 @@ async function checkNews(options = {}) {
                     return resolve({ success: true, message: 'No news boxes found on website.' });
                 }
 
-                // Extract top 10 articles
+                // Extract top articles (default 15)
+                const maxArticles = options.limit || parseInt(settings.daily_news_count || '15', 10) || 15;
                 const articles = [];
-                newsBoxes.slice(0, 10).each((i, el) => {
+                newsBoxes.slice(0, maxArticles).each((i, el) => {
                     const rawLink = $(el).attr('href');
                     const title = $(el).find('.newsHeading p, .newsHeading, h2, h3, p').first().text().trim();
                     if (rawLink && title) {
@@ -791,9 +796,28 @@ function scheduleNewsCheck(intervalMinutes = '30') {
     });
 }
 
+// Schedule Daily 10:00 AM Morning News Automation Task
+let daily10amCronTask = null;
+function scheduleDaily10amTask() {
+    if (daily10amCronTask) {
+        try { daily10amCronTask.stop(); } catch (e) {}
+    }
+    console.log('🌅 Scheduling Daily Morning 10:00 AM News Automation Task (Cron: 0 10 * * *)');
+    daily10amCronTask = cron.schedule('0 10 * * *', async () => {
+        console.log('⏰ [Daily 10 AM Cron Trigger] Executing morning news broadcast for top 15 news items...');
+        try {
+            const res = await checkNews({ forceImmediate: true, limit: 15 });
+            console.log('✅ [Daily 10 AM Cron Task] Result:', res.message);
+        } catch (err) {
+            console.error('❌ [Daily 10 AM Cron Task] Error:', err);
+        }
+    });
+}
+
 db.get('SELECT value FROM settings WHERE key = "check_interval"', (err, row) => {
     const interval = row ? row.value : '30';
     scheduleNewsCheck(interval);
+    scheduleDaily10amTask();
 });
 
 // Run initial news check 5 seconds after WhatsApp becomes ready (enabling immediate automation after restart/reconnect)
@@ -807,10 +831,27 @@ client.on('ready', () => {
     }, 5000);
 });
 
-const server = app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Admin Dashboard: http://localhost:${PORT}/admin.html`);
+const server = app.listen(PORT, HOST, () => {
+    console.log(`🌐 Server listening on interface ${HOST}:${PORT}`);
+    console.log(`🏠 Local Access:   http://localhost:${PORT}`);
+    console.log(`⚙️ Admin Dashboard: http://localhost:${PORT}/admin.html`);
+    try {
+        const os = require('os');
+        const interfaces = os.networkInterfaces();
+        for (const devName in interfaces) {
+            const iface = interfaces[devName];
+            for (let i = 0; i < iface.length; i++) {
+                const alias = iface[i];
+                if (alias.family === 'IPv4' && !alias.internal) {
+                    console.log(`📡 LAN Network Access: http://${alias.address}:${PORT}`);
+                    console.log(`⚙️ LAN Admin Dashboard: http://${alias.address}:${PORT}/admin.html`);
+                }
+            }
+        }
+    } catch (e) {}
+    console.log(`🌍 For Global Internet Access (outside home Wi-Fi), run: npm run tunnel (or npx localtunnel --port ${PORT})`);
 });
+
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {

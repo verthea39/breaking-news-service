@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PORT=3000
+ENV HOST=0.0.0.0
 
 WORKDIR /app
 

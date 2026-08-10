@@ -51,11 +51,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 check_interval: '30',
                 send_images: 'true',
                 active_sources: JSON.stringify(['reporterlive']),
-                daily_poster_layout: JSON.stringify(PERFECT_LAYOUT)
+                daily_poster_layout: JSON.stringify(PERFECT_LAYOUT),
+                daily_10am_enabled: 'true',
+                daily_news_count: '15',
+                daily_schedule_time: '10:00'
             };
             
             Object.keys(defaults).forEach(key => {
-                db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, defaults[key]]);
+                db.run('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', [key, defaults[key]]);
             });
         });
     }

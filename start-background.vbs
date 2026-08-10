@@ -8,5 +8,5 @@ If Not fso.FolderExists(ScriptDir & "\logs") Then
     fso.CreateFolder(ScriptDir & "\logs")
 End If
 
-WshShell.Run "node index.js", 0, False
+WshShell.Run """C:\Program Files\nodejs\node.exe"" index.js", 0, False
 

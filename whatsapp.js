@@ -52,8 +52,7 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu',
-            '--single-process'
+            '--disable-gpu'
         ],
         executablePath: executablePath
     }
@@ -103,6 +102,8 @@ function cleanStaleLocks() {
     } catch (e) {}
 }
 
+let retryTimeout = null;
+
 // Safe initialization wrapper to avoid unhandled rejections and puppeteer crashes
 async function safeInitialize() {
     if (client.isClientReady) {
@@ -117,6 +118,11 @@ async function safeInitialize() {
     if (!online) {
         console.log('⏳ Internet is offline. Skipping WhatsApp initialization until internet is back.');
         return;
+    }
+
+    if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
     }
 
     isInitializing = true;
@@ -142,10 +148,13 @@ async function safeInitialize() {
         isInitializing = false;
         hasInitialized = false;
         client.currentStatus = 'DISCONNECTED';
-        if (err.message && (err.message.includes('main frame') || err.message.includes('Target closed') || err.message.includes('Execution context'))) {
-            console.log('⏳ Retrying WhatsApp initialization in 5 seconds...');
-            setTimeout(() => { safeInitialize(); }, 5000);
-        }
+        
+        console.log('⏳ Retrying WhatsApp initialization in 10 seconds...');
+        if (retryTimeout) clearTimeout(retryTimeout);
+        retryTimeout = setTimeout(() => {
+            retryTimeout = null;
+            safeInitialize();
+        }, 10000);
     }
 }
 
